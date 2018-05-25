@@ -6,9 +6,8 @@ those jobs on one or more queues, and processing them later.
 
 ## Background ##
 
-Resque was pioneered and is developed by the fine folks at GitHub (yes,
-I am a kiss-ass), and written in Ruby. What you're seeing here is an
-almost direct port of the Resque worker and enqueue system to PHP.
+Resque was developed by the folks at GitHub and written in Ruby. 
+What you're seeing here is an almost direct port of the Resque worker and enqueue system to PHP.
 
 For more information on Resque, visit the official GitHub project:
  <https://github.com/resque/resque>
@@ -40,7 +39,6 @@ pre and post jobs
 * PHP 5.6+
 * phpredis
 * Redis 2.2+
-* Composer
 
 ## Getting Started ##
 
@@ -54,7 +52,7 @@ If you're not familiar with Composer, please see <http://getcomposer.org/>.
 ```json
 {
     "require": {
-        "idanoo/php-resque": "dev-master"
+        "iDanoo/php-resque": "dev-master"
     }
 }
 ```
@@ -79,7 +77,7 @@ Jobs are queued as follows:
 Resque::setBackend('localhost:6379');
 
 $args = array(
-        'name' => 'Chris'
+        'name' => 'TestName'
         );
 Resque::enqueue('default', 'My_Job', $args);
 ```
@@ -93,8 +91,7 @@ class My_Job
 {
     public function perform()
     {
-        // Work work work
-        echo $this->args['name'];
+        echo $this->args['name']; // Outputs 'TestName'
     }
 }
 ```
