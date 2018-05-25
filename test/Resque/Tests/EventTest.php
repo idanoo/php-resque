@@ -11,6 +11,7 @@
 class Resque_Tests_EventTest extends Resque_Tests_TestCase
 {
     private $callbacksHit = array();
+    private $worker;
 
     public function setUp()
     {
@@ -146,13 +147,13 @@ class Resque_Tests_EventTest extends Resque_Tests_TestCase
     public function beforePerformEventDontPerformCallback($instance)
     {
         $this->callbacksHit[] = __FUNCTION__;
-        throw new Resque_Job_DontPerform;
+        throw new Resque_Job_DontPerform();
     }
 
     public function beforeEnqueueEventDontCreateCallback($queue, $class, $args, $track = false)
     {
         $this->callbacksHit[] = __FUNCTION__;
-        throw new Resque_Job_DontCreate;
+        throw new Resque_Job_DontCreate();
     }
 
     public function assertValidEventCallback($function, $job)

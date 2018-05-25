@@ -20,15 +20,11 @@ class Resque_Tests_TestCase extends PHPUnit\Framework\TestCase
 
     public function setUp()
     {
-//        $config = file_get_contents(REDIS_CONF);
-//        preg_match('#^\s*port\s+([0-9]+)#m', $config, $matches);
+        // Setup redis connection on DB 9 for testing.
         $this->redis = new Redis();
         $this->redis->connect('localhost');
-        $this->redis->select(9);
 
-        Resque::setBackend('localhost', 9);
-
-        // Flush redis
+        Resque::setBackend('localhost');
         $this->redis->flushAll();
     }
 }

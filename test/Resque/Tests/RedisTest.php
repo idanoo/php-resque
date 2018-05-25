@@ -10,22 +10,15 @@
 
 class Resque_Tests_RedisTest extends Resque_Tests_TestCase
 {
-	/**
-	 * @expectedException Resque_RedisException
-	 */
-//	public function testRedisExceptionsAreSurfaced()
-//	{
-//		$mockCredis = $this->getMockBuilder('Credis_Client')
-//			->setMethods(['connect', '__call'])
-//			->getMock();
-//		$mockCredis->expects($this->any())->method('__call')
-//			->will($this->throwException(new CredisException('failure')));
-//
-//		Resque::setBackend(function($database) use ($mockCredis) {
-//			return new Resque_Redis('localhost:6379', $database, $mockCredis);
-//		});
-//		Resque::redis()->ping();
-//	}
+    /**
+     * @expectedException Test basic redis functionality.
+     */
+    public function testRedisGetSet()
+    {
+        $this->redis->set("testKey", 24);
+        $val = $this->redis->get("testKey");
+        $this->assertEquals(24, $val);
+    }
 
     /**
      * These DNS strings are considered valid.
