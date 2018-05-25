@@ -121,7 +121,6 @@ class Resque_Redis
             } else {
                 list($host, $port, $dsnDatabase, $user, $password, $options) = self::parseDsn($server);
                 // $user is not used, only $password
-
                 $timeout = isset($options['timeout']) ? intval($options['timeout']) : null;
 
                 $this->redisConnection = new Redis();
@@ -231,6 +230,7 @@ class Resque_Redis
      * @param string $name The name of the method called.
      * @param array $args Array of supplied arguments to the method.
      * @return mixed Return value from Resident::call() based on the command.
+     * @throws Resque_RedisException
      */
     public function __call($name, $args)
     {
@@ -239,9 +239,15 @@ class Resque_Redis
                 foreach ($args[0] AS $i => $v) {
                     $args[0][$i] = self::$defaultNamespace . $v;
                 }
-            } else {
+            }
+            else {
                 $args[0] = self::$defaultNamespace . $args[0];
             }
+        }
+        try {
+            return call_user_func_array(array($this->redisConnection, $name), $args);
+        } catch (Exception $e) {
+            throw new Resque_RedisException('Error communicating with Redis: ' . $e->getMessage(), 0, $e);
         }
     }
 

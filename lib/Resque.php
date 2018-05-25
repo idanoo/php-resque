@@ -100,6 +100,7 @@ class Resque
      *
      * @param string $queue The name of the queue to add the job to.
      * @param array $item Job description as an array to be JSON encoded.
+     * @return bool
      */
     public static function push($queue, $item)
     {
@@ -120,14 +121,14 @@ class Resque
      * return it.
      *
      * @param string $queue The name of the queue to fetch an item from.
-     * @return array Decoded item from the queue.
+     * @return mixed Decoded item from the queue.
      */
     public static function pop($queue)
     {
         $item = self::redis()->lpop('queue:' . $queue);
 
         if (!$item) {
-            return;
+            return false;
         }
 
         return json_decode($item, true);

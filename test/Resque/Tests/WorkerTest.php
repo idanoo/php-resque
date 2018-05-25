@@ -290,6 +290,6 @@ class Resque_Tests_WorkerTest extends Resque_Tests_TestCase
             $i++;
         }
 
-        $this->assertEquals(2, $i);
+        $this->assertEquals(2, $i, "End");
     }
 }

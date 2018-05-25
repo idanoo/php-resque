@@ -27,23 +27,6 @@ class Resque_Tests_JobTest extends Resque_Tests_TestCase
         $this->assertTrue((bool)Resque::enqueue('jobs', 'Test_Job'));
     }
 
-	/**
-	 * @expectedException Resque_RedisException
-	 */
-//	public function testRedisErrorThrowsExceptionOnJobCreation()
-//	{
-//		$mockCredis = $this->getMockBuilder('Credis_Client')
-//			->setMethods(['connect', '__call'])
-//			->getMock();
-//		$mockCredis->expects($this->any())->method('__call')
-//			->will($this->throwException(new CredisException('failure')));
-//
-//		Resque::setBackend(function($database) use ($mockCredis) {
-//			return new Resque_Redis('localhost:6379', $database, $mockCredis);
-//		});
-//		Resque::enqueue('jobs', 'This is a test');
-//	}
-
     public function testQeueuedJobCanBeReserved()
     {
         Resque::enqueue('jobs', 'Test_Job');
@@ -401,20 +384,6 @@ class Resque_Tests_JobTest extends Resque_Tests_TestCase
         $job = new Resque_Job('jobs', $payload);
         $factory = new Some_Stub_Factory();
         $job->setJobFactory($factory);
-        $instance = $job->getInstance();
-        $this->assertInstanceOf('Resque_JobInterface', $instance);
-    }
-
-    public function testDoNotUseFactoryToGetInstance()
-    {
-        $payload = array(
-            'class' => 'Some_Job_Class',
-            'args' => array(array())
-        );
-        $job = new Resque_Job('jobs', $payload);
-        $factory = $this->getMock('Resque_Job_FactoryInterface');
-        $testJob = $this->getMock('Resque_JobInterface');
-        $factory->expects(self::never())->method('create')->will(self::returnValue($testJob));
         $instance = $job->getInstance();
         $this->assertInstanceOf('Resque_JobInterface', $instance);
     }
