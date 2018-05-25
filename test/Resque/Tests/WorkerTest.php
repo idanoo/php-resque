@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Resque_Worker tests.
  *
@@ -6,6 +7,7 @@
  * @author		Chris Boulton <chris@bigcommerce.com>
  * @license		http://www.opensource.org/licenses/mit-license.php
  */
+
 class Resque_Tests_WorkerTest extends Resque_Tests_TestCase
 {
 	public function testWorkerRegistersInList()

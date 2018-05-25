@@ -1,4 +1,8 @@
-## 1.3 (2013-??-??) - Current Master ##
+## 1.4 (2018-05-25)
+
+
+
+## 1.3 (2013) ##
 
 **Note:** This release introduces backwards incompatible changes with all previous versions of php-resque. Please see below for details.
 
