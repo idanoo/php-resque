@@ -1,26 +1,19 @@
 {
-	"name": "chrisboulton/php-resque",
+	"name": "iDanoo/php-resque",
 	"type": "library",
-	"description": "Redis backed library for creating background jobs and processing them later. Based on resque for Ruby.",
+	"description": "Redis backed library for creating background jobs and processing them later. Based on resque for Ruby. Originally forked from chrisboulton/php-resque.",
 	"keywords": ["job", "background", "redis", "resque"],
-	"homepage": "http://www.github.com/chrisboulton/php-resque/",
+	"homepage": "http://www.github.com/iDanoo/php-resque/",
 	"license": "MIT",
 	"authors": [
 		{
-			"name": "Chris Boulton",
-			"email": "chris@bigcommerce.com"
-		}
-	],
-	"repositories": [
-		{
-			"type": "vcs",
-			"url": "https://github.com/chrisboulton/credis"
+			"name": "Daniel Mason",
+			"email": "daniel@m2.nz"
 		}
 	],
 	"require": {
 		"php": ">=5.3.0",
 		"ext-pcntl": "*",
-		"colinmollenhour/credis": "~1.7",
 		"psr/log": "~1.0"
 	},
 	"suggest": {

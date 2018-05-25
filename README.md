@@ -1,4 +1,4 @@
-php-resque: PHP Resque Worker (and Enqueue) [![Build Status](https://secure.travis-ci.org/chrisboulton/php-resque.png)](http://travis-ci.org/chrisboulton/php-resque)
+php-resque: PHP Resque Worker (and Enqueue) 
 ===========================================
 
 Resque is a Redis-backed library for creating background jobs, placing
@@ -37,15 +37,15 @@ pre and post jobs
 
 ## Requirements ##
 
-* PHP 5.3+
+* PHP 5.6+
+* phpredis
 * Redis 2.2+
-* Optional but Recommended: Composer
+* Composer
 
 ## Getting Started ##
 
 The easiest way to work with php-resque is when it's installed as a
-Composer package inside your project. Composer isn't strictly
-required, but makes life a lot easier.
+Composer package inside your project.
 
 If you're not familiar with Composer, please see <http://getcomposer.org/>.
 
@@ -54,7 +54,7 @@ If you're not familiar with Composer, please see <http://getcomposer.org/>.
 ```json
 {
     "require": {
-        "chrisboulton/php-resque": "1.2.x"
+        "idanoo/php-resque": "dev-master"
     }
 }
 ```
@@ -440,7 +440,10 @@ needing to directly examine the code), have a look at `HOWITWORKS.md`.
 
 ## Contributors ##
 
-### Project Lead ###
+### Current Maintainers ###
+* @iDanoo
+
+### Past Maintainer / Forked From ###
 
 * @chrisboulton
 
