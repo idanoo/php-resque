@@ -239,8 +239,7 @@ class Resque_Redis
                 foreach ($args[0] AS $i => $v) {
                     $args[0][$i] = self::$defaultNamespace . $v;
                 }
-            }
-            else {
+            } else {
                 $args[0] = self::$defaultNamespace . $args[0];
             }
         }
