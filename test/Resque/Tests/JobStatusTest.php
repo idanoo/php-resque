@@ -36,6 +36,7 @@ class Resque_Tests_JobStatusTest extends Resque_Tests_TestCase
         $token = Resque::enqueue('jobs', 'Test_Job', null, true);
         $job = Resque_Job::reserve('jobs');
         $this->assertEquals(Resque_Job_Status::STATUS_WAITING, $job->getStatus());
+
     }
 
     public function testQueuedJobReturnsQueuedStatus()

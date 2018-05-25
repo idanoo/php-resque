@@ -93,7 +93,7 @@ class Resque_Job
 	 */
 	public static function reserve($queue)
 	{
-		$payload = Resque::pop($queue);
+        $payload = Resque::pop($queue);
 		if(!is_array($payload)) {
 			return false;
 		}
@@ -112,7 +112,6 @@ class Resque_Job
 	public static function reserveBlocking(array $queues, $timeout = null)
 	{
 		$item = Resque::blpop($queues, $timeout);
-
 		if(!is_array($item)) {
 			return false;
 		}
