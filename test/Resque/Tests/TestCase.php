@@ -22,7 +22,7 @@ class Resque_Tests_TestCase extends PHPUnit\Framework\TestCase
     {
 //        $config = file_get_contents(REDIS_CONF);
 //        preg_match('#^\s*port\s+([0-9]+)#m', $config, $matches);
-        $this->redis = new \Redis();
+        $this->redis = new Redis();
         $this->redis->connect('localhost');
         $this->redis->select(9);
 

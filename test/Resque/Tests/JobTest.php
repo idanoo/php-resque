@@ -323,11 +323,11 @@ class Resque_Tests_JobTest extends Resque_Tests_TestCase
     public function testDequeueItemWithArg()
     {
         $queue = 'jobs';
-        $arg = array('foo' => 1, 'bar' => 2);
+        $arg = ['foo' => 1, 'bar' => 2];
         Resque::enqueue($queue, 'Test_Job_Dequeue9');
         Resque::enqueue($queue, 'Test_Job_Dequeue9', $arg);
         $this->assertEquals(Resque::size($queue), 2);
-        $test = array('Test_Job_Dequeue9' => $arg);
+        $test = ['Test_Job_Dequeue9' => $arg];
         $this->assertEquals(Resque::dequeue($queue, $test), 1);
         #$this->assertEquals(Resque::size($queue), 1);
     }
@@ -336,16 +336,16 @@ class Resque_Tests_JobTest extends Resque_Tests_TestCase
     {
         // GIVEN
         $queue = 'jobs';
-        $args = array('foo' => 1, 'bar' => 10);
-        $removeArgs = array('foo' => 1, 'bar' => 2);
+        $args = ['foo' => 1, 'bar' => 10];
+        $removeArgs = ['foo' => 1, 'bar' => 2];
         Resque::enqueue($queue, 'Test_Job_Dequeue9', $args);
         Resque::enqueue($queue, 'Test_Job_Dequeue9', $removeArgs);
         Resque::enqueue($queue, 'Test_Job_Dequeue9', $removeArgs);
-        $this->assertEquals(Resque::size($queue), 3);
+        $this->assertEquals(Resque::size($queue), 3, "Failed to add 3 items.");
 
         // WHEN
-        $test = array('Test_Job_Dequeue9' => $removeArgs);
-        $removedItems = Resque::dequeue($queue, $test);
+        $test = ['Test_Job_Dequeue9' => $removeArgs];
+        $removedItems = Resque::dequeue($queue, $test, "Dequeue one failed!");
 
         // THEN
         $this->assertEquals($removedItems, 2);

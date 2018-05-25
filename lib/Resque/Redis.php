@@ -124,7 +124,7 @@ class Resque_Redis
 
                 $timeout = isset($options['timeout']) ? intval($options['timeout']) : null;
 
-                $this->redisConnection = new \Redis();
+                $this->redisConnection = new Redis();
 
                 if (!$this->redisConnection->connect($host, $port, $timeout)) {
                     throw new RedisException("Connection Failed to Redis!");
