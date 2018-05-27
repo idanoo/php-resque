@@ -1,5 +1,5 @@
 {
-	"name": "iDanoo/php-resque",
+	"name": "idanoo/php-resque",
 	"type": "library",
 	"description": "Redis backed library for creating background jobs and processing them later. Based on resque for Ruby. Originally forked from chrisboulton/php-resque.",
 	"keywords": ["job", "background", "redis", "resque"],
