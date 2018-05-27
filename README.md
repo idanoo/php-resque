@@ -52,7 +52,7 @@ If you're not familiar with Composer, please see <http://getcomposer.org/>.
 ```json
 {
     "require": {
-        "iDanoo/php-resque": "dev-master"
+        "idanoo/php-resque": "dev-master"
     }
 }
 ```
