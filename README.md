@@ -36,7 +36,7 @@ pre and post jobs
 
 ## Requirements ##
 
-* PHP 5.6+
+* PHP 7.0+ (May work with 5.6+, Untested)
 * phpredis
 * Redis 2.2+
 
@@ -232,12 +232,15 @@ variables are set (`setenv`) before you do.
 ### Logging ###
 
 The port supports the same environment variables for logging to STDOUT.
-Setting `VERBOSE` will print basic debugging information and `VVERBOSE`
-will print detailed information.
+Setting `LOGLEVEL` will print different logs depending on levels. 
+Valid loglevels are listed below with an example.
+Default `LOGLEVEL` is `WARNING`. 
 
+```bash
+[DEBUG/INFO/NOTICE/WARNING/ERROR/CRITICAL/ALERT/EMERGENCY]
+```
 ```sh
-$ VERBOSE=1 QUEUE=file_serve bin/resque
-$ VVERBOSE=1 QUEUE=file_serve bin/resque
+$ LOGLEVEL=DEBUG QUEUE=file_serve bin/resque
 ```
 
 ### Priorities and Queue Lists ###

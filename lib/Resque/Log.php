@@ -10,11 +10,11 @@
 
 class Resque_Log extends Psr\Log\AbstractLogger
 {
-    public $verbose;
+    public $logLevel;
 
-    public function __construct($verbose = false)
+    public function __construct($logLevel = "warning")
     {
-        $this->verbose = $verbose;
+        $this->logLevel = strtolower($logLevel);
     }
 
     /**
@@ -25,22 +25,17 @@ class Resque_Log extends Psr\Log\AbstractLogger
      * @param array $context Variables to replace { placeholder }
      * @return null
      */
-    public function log($level, $message, array $context = array())
+    public function log($level, $message, array $context = [])
     {
-        if ($this->verbose) {
+        $logLevels = ["emergency", "alert", "critical", "error", "warning", "notice", "info", "debug"];
+        if (array_search($level, $logLevels) <= array_search($this->logLevel, $logLevels)) {
             fwrite(
                 STDOUT,
-                '[' . $level . '] [' . strftime('%T %Y-%m-%d') . '] ' . $this->interpolate($message, $context) . PHP_EOL
+                '[' . $level . '][' . strftime('%T %Y-%m-%d') . '] ' . $this->interpolate($message, $context) . PHP_EOL
             );
-            return;
         }
+        return;
 
-        if (!($level === Psr\Log\LogLevel::INFO || $level === Psr\Log\LogLevel::DEBUG)) {
-            fwrite(
-                STDOUT,
-                '[' . $level . '] ' . $this->interpolate($message, $context) . PHP_EOL
-            );
-        }
     }
 
     /**
@@ -51,10 +46,10 @@ class Resque_Log extends Psr\Log\AbstractLogger
      * @param  array $context Array of variables to use in message
      * @return string
      */
-    public function interpolate($message, array $context = array())
+    public function interpolate($message, array $context = [])
     {
         // build a replacement array with braces around the context keys
-        $replace = array();
+        $replace = [];
         foreach ($context as $key => $val) {
             $replace['{' . $key . '}'] = $val;
         }

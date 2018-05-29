@@ -48,13 +48,9 @@ if (!empty($REDIS_BACKEND)) {
 }
 
 $logLevel = false;
-$LOGGING = getenv('LOGGING');
-$VERBOSE = getenv('VERBOSE');
-$VVERBOSE = getenv('VVERBOSE');
-if (!empty($LOGGING) || !empty($VERBOSE)) {
-    $logLevel = true;
-} else if (!empty($VVERBOSE)) {
-    $logLevel = true;
+$LOGGING = getenv('LOGLEVEL');
+if (!empty($LOGGING) ) {
+    $logLevel = $LOGGING;
 }
 
 $APP_INCLUDE = getenv('APP_INCLUDE');

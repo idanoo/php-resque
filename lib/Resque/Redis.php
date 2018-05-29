@@ -181,7 +181,7 @@ class Resque_Redis
         $parts = parse_url($dsn);
 
         // Check the URI scheme
-        $validSchemes = array('redis', 'tcp');
+        $validSchemes = ['redis', 'tcp'];
         if (isset($parts['scheme']) && !in_array($parts['scheme'], $validSchemes)) {
             throw new \InvalidArgumentException("Invalid DSN. Supported schemes are " . implode(', ', $validSchemes));
         }
@@ -207,20 +207,20 @@ class Resque_Redis
         $pass = isset($parts['pass']) ? $parts['pass'] : false;
 
         // Convert the query string into an associative array
-        $options = array();
+        $options = [];
         if (isset($parts['query'])) {
             // Parse the query string into an array
             parse_str($parts['query'], $options);
         }
 
-        return array(
+        return [
             $parts['host'],
             $port,
             $database,
             $user,
             $pass,
             $options,
-        );
+        ];
     }
 
     /**
@@ -244,7 +244,7 @@ class Resque_Redis
             }
         }
         try {
-            return call_user_func_array(array($this->redisConnection, $name), $args);
+            return call_user_func_array([$this->redisConnection, $name], $args);
         } catch (Exception $e) {
             throw new Resque_RedisException('Error communicating with Redis: ' . $e->getMessage(), 0, $e);
         }

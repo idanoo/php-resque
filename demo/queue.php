@@ -11,12 +11,12 @@ Resque::setBackend('127.0.0.1:6379');
 //Resque::setBackend('redis://user:pass@127.0.0.1:6379');
 //Resque::setBackend('redis://user:pass@a.host.name:3432/2');
 
-$args = array(
+$args = [
     'time' => time(),
-    'array' => array(
+    'array' => [
         'test' => 'test',
-    ),
-);
+    ],
+];
 if (empty($argv[2])) {
     $jobId = Resque::enqueue('default', $argv[1], $args, true);
 } else {
