@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection ALL */
 
 /**
  * Base Resque class.
@@ -51,6 +51,7 @@ class Resque
      * Return an instance of the Resque_Redis class instantiated for Resque.
      *
      * @return Resque_Redis Instance of Resque_Redis.
+     * @throws Resque_RedisException
      */
     public static function redis()
     {
@@ -169,7 +170,7 @@ class Resque
      *
      * @param array $queues
      * @param int $timeout
-     * @return null|array   Decoded item from the queue.
+     * @return array|null|void
      */
     public static function blpop(array $queues, $timeout)
     {
@@ -181,7 +182,7 @@ class Resque
         $item = self::redis()->blpop($list, (int)$timeout);
 
         if (!$item) {
-            return;
+            return false;
         }
 
         /**
@@ -244,7 +245,7 @@ class Resque
      * Reserve and return the next available job in the specified queue.
      *
      * @param string $queue Queue to fetch next available job from.
-     * @return Resque_Job Instance of Resque_Job to be processed, false if none or error.
+     * @return false|object|Resque_Job
      */
     public static function reserve($queue)
     {
@@ -325,7 +326,9 @@ class Resque
      * @params string $string redis result in json
      * @params $items
      *
-     * @return (bool)
+     * @param $string
+     * @param $items
+     * @return bool (bool)
      */
     private static function matchItem($string, $items)
     {
@@ -360,7 +363,9 @@ class Resque
      * @private
      *
      * @params string $queue the name of the queue
+     * @param $queue
      * @return integer number of deleted items belongs to this list
+     * @throws Resque_RedisException
      */
     private static function removeList($queue)
     {

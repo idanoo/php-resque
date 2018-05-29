@@ -119,6 +119,7 @@ class Resque_Redis
             if (is_object($client)) {
                 $this->redisConnection = $client;
             } else {
+                /** @noinspection PhpUnusedLocalVariableInspection */
                 list($host, $port, $dsnDatabase, $user, $password, $options) = self::parseDsn($server);
                 // $user is not used, only $password
                 $timeout = isset($options['timeout']) ? intval($options['timeout']) : null;

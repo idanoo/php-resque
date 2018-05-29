@@ -29,10 +29,10 @@ class Resque_Job_Status
     /**
      * @var array Array of statuses that are considered final/complete.
      */
-    private static $completeStatuses = array(
+    private static $completeStatuses = [
         self::STATUS_FAILED,
         self::STATUS_COMPLETE
-    );
+    ];
 
     /**
      * Setup a new instance of the job monitor class for the supplied job ID.
@@ -52,11 +52,11 @@ class Resque_Job_Status
      */
     public static function create($id)
     {
-        $statusPacket = array(
+        $statusPacket = [
             'status' => self::STATUS_WAITING,
             'updated' => time(),
             'started' => time(),
-        );
+        ];
         Resque::redis()->set('job:' . $id . ':status', json_encode($statusPacket));
     }
 

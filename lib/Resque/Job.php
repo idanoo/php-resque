@@ -70,12 +70,12 @@ class Resque_Job
                 'Supplied $args must be an array.'
             );
         }
-        Resque::push($queue, array(
+        Resque::push($queue, [
             'class' => $class,
-            'args' => array($args),
+            'args' => [$args],
             'id' => $id,
             'queue_time' => microtime(true),
-        ));
+        ]);
 
         if ($monitor) {
             Resque_Job_Status::create($id);
@@ -153,7 +153,7 @@ class Resque_Job
     public function getArguments()
     {
         if (!isset($this->payload['args'])) {
-            return array();
+            return [];
         }
 
         return $this->payload['args'][0];
@@ -162,7 +162,6 @@ class Resque_Job
     /**
      * Get the instantiated object for this job that will be performing work.
      * @return Resque_JobInterface Instance of the object that this job belongs to.
-     * @throws Resque_Exception
      */
     public function getInstance()
     {
@@ -200,7 +199,7 @@ class Resque_Job
 
             Resque_Event::trigger('afterPerform', $this);
         } // beforePerform/setUp have said don't perform this job. Return.
-        catch (Resque_Job_DontPerform $e) {
+            /** @noinspection PhpRedundantCatchClauseInspection */ catch (Resque_Job_DontPerform $e) {
             return false;
         }
 
@@ -214,10 +213,10 @@ class Resque_Job
      */
     public function fail($exception)
     {
-        Resque_Event::trigger('onFailure', array(
+        Resque_Event::trigger('onFailure', [
             'exception' => $exception,
             'job' => $this,
-        ));
+        ]);
 
         $this->updateStatus(Resque_Job_Status::STATUS_FAILED);
         Resque_Failure::create(
@@ -252,9 +251,9 @@ class Resque_Job
      */
     public function __toString()
     {
-        $name = array(
+        $name = [
             'Job{' . $this->queue . '}'
-        );
+        ];
         if (!empty($this->payload['id'])) {
             $name[] = 'ID: ' . $this->payload['id'];
         }

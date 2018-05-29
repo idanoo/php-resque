@@ -101,6 +101,7 @@ class Resque_Worker
      *
      * @param string $workerId ID of the worker.
      * @return boolean True if the worker exists, false if not.
+     * @throws Resque_RedisException
      */
     public static function exists($workerId)
     {
@@ -111,14 +112,15 @@ class Resque_Worker
      * Given a worker ID, find it and return an instantiated worker class for it.
      *
      * @param string $workerId The ID of the worker.
-     * @return Resque_Worker Instance of the worker. False if the worker does not exist.
+     * @return bool|Resque_Worker
+     * @throws Resque_RedisException
      */
     public static function find($workerId)
     {
         if (!self::exists($workerId) || false === strpos($workerId, ":")) {
             return false;
         }
-
+        /** @noinspection PhpUnusedLocalVariableInspection */
         list($hostname, $pid, $queues) = explode(':', $workerId, 3);
         $queues = explode(',', $queues);
         $worker = new self($queues);
@@ -143,6 +145,8 @@ class Resque_Worker
      * Queues are checked every $interval (seconds) for new jobs.
      *
      * @param int $interval How often to check for new jobs across the queues.
+     * @param bool $blocking
+     * @throws Resque_RedisException
      */
     public function work($interval = Resque::DEFAULT_INTERVAL, $blocking = false)
     {
@@ -199,6 +203,7 @@ class Resque_Worker
                 $status = 'Processing ' . $job->queue . ' since ' . strftime('%F %T');
                 $this->updateProcLine($status);
                 $this->logger->log(Psr\Log\LogLevel::INFO, $status);
+                /** @noinspection PhpParamsInspection */
                 $this->perform($job);
                 if ($this->child === 0) {
                     exit(0);
@@ -456,11 +461,12 @@ class Resque_Worker
 
     /**
      * Register this worker in Redis.
+     * 48 hour TTL so we don't pollute the db on server termination.
      */
     public function registerWorker()
     {
         Resque::redis()->sadd('workers', (string)$this);
-        Resque::redis()->set('worker:' . (string)$this . ':started', strftime('%a %b %d %H:%M:%S %Z %Y'));
+        Resque::redis()->setex('worker:' . (string)$this . ':started', 172800, strftime('%a %b %d %H:%M:%S %Z %Y'));
     }
 
     /**
@@ -483,7 +489,8 @@ class Resque_Worker
     /**
      * Tell Redis which job we're currently working on.
      *
-     * @param object $job Resque_Job instance containing the job we're working on.
+     * @param Resque_Job $job Resque_Job instance containing the job we're working on.
+     * @throws Resque_RedisException
      */
     public function workingOn(Resque_Job $job)
     {

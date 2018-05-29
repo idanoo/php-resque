@@ -10,9 +10,6 @@
 
 class Resque_Tests_RedisTest extends Resque_Tests_TestCase
 {
-    /**
-     * @expectedException Test basic redis functionality.
-     */
     public function testRedisGetSet()
     {
         $this->redis->set("testKey", 24);
@@ -173,6 +170,8 @@ class Resque_Tests_RedisTest extends Resque_Tests_TestCase
 
     /**
      * @dataProvider validDsnStringProvider
+     * @param $dsn
+     * @param $expected
      */
     public function testParsingValidDsnString($dsn, $expected)
     {
@@ -183,6 +182,7 @@ class Resque_Tests_RedisTest extends Resque_Tests_TestCase
     /**
      * @dataProvider bogusDsnStringProvider
      * @expectedException InvalidArgumentException
+     * @param $dsn
      */
     public function testParsingBogusDsnStringThrowsException($dsn)
     {

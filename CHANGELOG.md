@@ -1,15 +1,17 @@
-## 1.4.1 (2018-05-29)
+## 1.4.1 (2018-05-29) 
 - Updated travis builds to run on PHP 7.0, 7.1 and 7.2.
 - Added ability to specify multiple log levels. [DEBUG/INFO/NOTICE/WARNING/ERROR/CRITICAL/ALERT/EMERGENCY]
-- Default `LOGLEVEL` is now `WARNING`.
-- Removed VERBOSE / VVERBOSE flags. 
-- Enabled date/time logging by default.
+- Default `LOGLEVEL` is now `WARNING`. 
+- Removed VERBOSE / VVERBOSE flags and always output timestamp in logs.
+- Added 48 hour TTL to the worker started timestamp to prevent db pollution on server termination.
 
 ## 1.4 (2018-05-25)
+- Forked from chrisboulton/php-resque.
 - Replaced credis (rather unmaintained) in favour of phpredis.
 - Reformatted codebase to be PSR2 compliant.
 
-## 1.3 (2013) ## 
+
+## 1.3 (2013) 
 
 **Note:** This release introduces backwards incompatible changes with all previous versions of php-resque. Please see below for details.
 
