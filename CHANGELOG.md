@@ -1,3 +1,6 @@
+## 1.4.2 (2018-05-30)
+- Reimplemented credis due to issues with Redis: Connection Closed.
+
 ## 1.4.1 (2018-05-29) 
 - Updated travis builds to run on PHP 7.0, 7.1 and 7.2.
 - Added ability to specify multiple log levels. [DEBUG/INFO/NOTICE/WARNING/ERROR/CRITICAL/ALERT/EMERGENCY]
@@ -7,7 +10,7 @@
 
 ## 1.4 (2018-05-25)
 - Forked from chrisboulton/php-resque.
-- Replaced credis (rather unmaintained) in favour of phpredis.
+- Replaced credis in favour of phpredis.
 - Reformatted codebase to be PSR2 compliant.
 
 

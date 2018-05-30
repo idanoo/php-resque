@@ -11,6 +11,12 @@
 class Resque_Redis
 {
     /**
+     * Redis Client
+     * @var Credis_Client
+     */
+    private $driver;
+
+    /**
      * Redis namespace
      * @var string
      */
@@ -110,41 +116,36 @@ class Resque_Redis
      * @param string|array $server A DSN or array
      * @param int $database A database number to select. However, if we find a valid database number in the DSN the
      *                      DSN-supplied value will be used instead and this parameter is ignored.
-     * @param object $client Optional Credis_Cluster or Credis_Client instance instantiated by you
+     * @param object $client Optional Credis_Client instance instantiated by you
      * @throws Resque_RedisException
      */
     public function __construct($server, $database = null, $client = null)
     {
         try {
             if (is_object($client)) {
-                $this->redisConnection = $client;
+                $this->driver = $client;
             } else {
                 /** @noinspection PhpUnusedLocalVariableInspection */
                 list($host, $port, $dsnDatabase, $user, $password, $options) = self::parseDsn($server);
                 // $user is not used, only $password
                 $timeout = isset($options['timeout']) ? intval($options['timeout']) : null;
-
-                $this->redisConnection = new Redis();
-
-                if (!$this->redisConnection->connect($host, $port, $timeout)) {
-                    throw new RedisException("Connection Failed to Redis!");
-                };
-
+                $persistent = isset($options['persistent']) ? $options['persistent'] : '';
+                $maxRetries = isset($options['max_connect_retries']) ? $options['max_connect_retries'] : 0;
+                $this->driver = new Credis_Client($host, $port, $timeout, $persistent);
+                $this->driver->setMaxConnectRetries($maxRetries);
                 if ($password) {
-                    $this->redisConnection->auth($password);
+                    $this->driver->auth($password);
                 }
-
                 // If we have found a database in our DSN, use it instead of the `$database`
                 // value passed into the constructor.
                 if ($dsnDatabase !== false) {
                     $database = $dsnDatabase;
                 }
-
-                if ($database) {
-                    $this->redisConnection->select($database);
-                }
             }
-        } catch (RedisException $e) {
+            if ($database !== null) {
+                $this->driver->select($database);
+            }
+        } catch (Exception $e) {
             throw new Resque_RedisException('Error communicating with Redis: ' . $e->getMessage(), 0, $e);
         }
     }
@@ -245,8 +246,8 @@ class Resque_Redis
             }
         }
         try {
-            return call_user_func_array([$this->redisConnection, $name], $args);
-        } catch (Exception $e) {
+            return $this->driver->__call($name, $args);
+        } catch (CredisException $e) {
             throw new Resque_RedisException('Error communicating with Redis: ' . $e->getMessage(), 0, $e);
         }
     }
