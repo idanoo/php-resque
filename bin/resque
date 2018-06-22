@@ -41,15 +41,16 @@ $REDIS_BACKEND = getenv('REDIS_BACKEND');
 // A redis database number
 $REDIS_BACKEND_DB = getenv('REDIS_BACKEND_DB');
 if (!empty($REDIS_BACKEND)) {
-    if (empty($REDIS_BACKEND_DB))
+    if (empty($REDIS_BACKEND_DB)) {
         Resque::setBackend($REDIS_BACKEND);
-    else
+    } else {
         Resque::setBackend($REDIS_BACKEND, $REDIS_BACKEND_DB);
+    }
 }
 
 $logLevel = false;
 $LOGGING = getenv('LOGLEVEL');
-if (!empty($LOGGING) ) {
+if (!empty($LOGGING)) {
     $logLevel = $LOGGING;
 }
 

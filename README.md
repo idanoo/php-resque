@@ -76,9 +76,8 @@ Jobs are queued as follows:
 // Required if redis is located elsewhere
 Resque::setBackend('localhost:6379');
 
-$args = array(
-        'name' => 'TestName'
-        );
+$args = ['name' => 'TestName'];
+
 Resque::enqueue('default', 'My_Job', $args);
 ```
 
@@ -141,7 +140,7 @@ Resque::dequeue('default', ['My_Job']);
 Resque::dequeue('default', ['My_Job' => '087df5819a790ac666c9608e2234b21e']);
 
 // Removes job class 'My_Job' with arguments of queue 'default'
-Resque::dequeue('default', ['My_Job' => array('foo' => 1, 'bar' => 2)]);
+Resque::dequeue('default', ['My_Job' => ['foo' => 1, 'bar' => 2]]);
 
 // Removes multiple jobs
 Resque::dequeue('default', ['My_Job', 'My_Job2']);
@@ -345,7 +344,7 @@ Resque_Event::listen('eventName', [callback]);
 * A string with the name of a function
 * An array containing an object and method to call
 * An array containing an object and a static method to call
-* A closure (PHP 5.3+)
+* A closure
 
 Events may pass arguments (documented below), so your callback should accept
 these arguments.

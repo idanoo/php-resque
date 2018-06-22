@@ -1,5 +1,6 @@
 ## 1.4.2 (2018-05-30)
 - Reimplemented credis due to issues with Redis: Connection Closed.
+- Updated Docs.
 
 ## 1.4.1 (2018-05-29) 
 - Updated travis builds to run on PHP 7.0, 7.1 and 7.2.

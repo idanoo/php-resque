@@ -16,6 +16,7 @@ class Resque_Failure_Redis implements Resque_Failure_Interface
      * @param object $exception Instance of the exception that was thrown by the failed job.
      * @param object $worker Instance of Resque_Worker that received the job.
      * @param string $queue The name of the queue the job was fetched from.
+     * @throws Resque_RedisException
      */
     public function __construct($payload, $exception, $worker, $queue)
     {
