@@ -1,3 +1,8 @@
+## 1.4.3 (2018-07-16)
+- Updated README to include supervisor configuration.
+- Change logfile date format to `%Y-%m-%d %T`.
+- Added return types to more functions.
+
 ## 1.4.2 (2018-05-30)
 - Reimplemented credis due to issues with Redis: Connection Closed.
 - Updated Docs.
@@ -13,7 +18,6 @@
 - Forked from chrisboulton/php-resque.
 - Replaced credis in favour of phpredis.
 - Reformatted codebase to be PSR2 compliant.
-
 
 ## 1.3 (2013) 
 

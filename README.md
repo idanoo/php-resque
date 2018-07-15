@@ -432,6 +432,30 @@ Called after a job has been queued using the `Resque::enqueue` method. Arguments
 * Queue - string containing the name of the queue the job was added to
 * ID - string containing the new token of the enqueued job
 
+## Supervisor Configuration ##
+
+You may like to run php-resque on a supervisor task to manage the processes. 
+The following is a default config that can be modified to suit.
+
+```sh
+[program:resque-dev]
+directory=/var/www  # Project root
+command=php vendor/bin/resque
+numprocs=2  # Change this value for more threads
+environment=LOGLEVEL=NOTICE,QUEUE='*',BLOCKING=1,COUNT=1,APP_INCLUDE='includes/autoload.php',REDIS_BACKEND=127.0.0.1,REDIS_BACKEND_DB=0
+redirect_stderr=true  # Output stderr to logfile
+stdout_logfile=/var/log/resque.log
+autostart=true
+autorestart=true
+stopsignal=QUIT
+process_name = %(program_name)s_%(process_num)02d
+```
+
+Issues:
+- Restarting worker doesn't always make it use updated code, I find on a dev-environment issuing
+the following command works well to restart everything.
+`sudo /etc/init.d/supervisor force-stop && sleep 1 && sudo /etc/init.d/supervisor restart`
+
 ## Step-By-Step ##
 
 For a more in-depth look at what php-resque does under the hood (without 

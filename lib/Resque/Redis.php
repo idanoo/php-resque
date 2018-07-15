@@ -252,12 +252,12 @@ class Resque_Redis
         }
     }
 
-    public static function getPrefix()
+    public static function getPrefix(): string
     {
         return self::$defaultNamespace;
     }
 
-    public static function removePrefix($string)
+    public static function removePrefix($string): string
     {
         $prefix = self::getPrefix();
 

@@ -1,4 +1,4 @@
-<?php /** @noinspection ALL */
+<?php
 
 /**
  * Base Resque class.
@@ -10,7 +10,7 @@
 
 class Resque
 {
-    const VERSION = '1.4.2';
+    const VERSION = '1.4.3';
 
     const DEFAULT_INTERVAL = 5;
 

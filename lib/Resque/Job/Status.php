@@ -66,7 +66,7 @@ class Resque_Job_Status
      *
      * @return boolean True if the status is being monitored, false if not.
      */
-    public function isTracking()
+    public function isTracking(): bool
     {
         if ($this->isTracking === false) {
             return false;
@@ -137,7 +137,7 @@ class Resque_Job_Status
      *
      * @return string String representation of the current job status class.
      */
-    public function __toString()
+    public function __toString(): string
     {
         return 'job:' . $this->id . ':status';
     }

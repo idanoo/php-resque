@@ -82,7 +82,7 @@ class Resque_Worker
      * Return all workers known to Resque as instantiated instances.
      * @return array
      */
-    public static function all()
+    public static function all(): array
     {
         $workers = Resque::redis()->smembers('workers');
         if (!is_array($workers)) {
@@ -103,7 +103,7 @@ class Resque_Worker
      * @return boolean True if the worker exists, false if not.
      * @throws Resque_RedisException
      */
-    public static function exists($workerId)
+    public static function exists($workerId): bool
     {
         return (bool)Resque::redis()->sismember('workers', $workerId);
     }
@@ -532,14 +532,10 @@ class Resque_Worker
      *
      * @return array Array with details of current job.
      */
-    public function job()
+    public function job(): array
     {
         $job = Resque::redis()->get('worker:' . $this);
-        if (!$job) {
-            return [];
-        } else {
-            return json_decode($job, true);
-        }
+        return $job ? json_decode($job, true) : [];
     }
 
     /**

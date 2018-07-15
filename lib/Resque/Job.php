@@ -124,14 +124,15 @@ class Resque_Job
      *
      * @param int $status Status constant from Resque_Job_Status indicating the current status of a job.
      */
-    public function updateStatus($status)
+    public function updateStatus($status): bool
     {
         if (empty($this->payload['id'])) {
-            return;
+            return false;
         }
 
         $statusInstance = new Resque_Job_Status($this->payload['id']);
         $statusInstance->update($status);
+        return true;
     }
 
     /**

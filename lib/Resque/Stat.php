@@ -16,7 +16,7 @@ class Resque_Stat
      * @param string $stat The name of the statistic to get the stats for.
      * @return mixed Value of the statistic.
      */
-    public static function get($stat)
+    public static function get($stat): int
     {
         return (int)Resque::redis()->get('stat:' . $stat);
     }
@@ -28,7 +28,7 @@ class Resque_Stat
      * @param int $by The amount to increment the statistic by.
      * @return boolean True if successful, false if not.
      */
-    public static function incr($stat, $by = 1)
+    public static function incr($stat, $by = 1): bool
     {
         return (bool)Resque::redis()->incrby('stat:' . $stat, $by);
     }
@@ -40,7 +40,7 @@ class Resque_Stat
      * @param int $by The amount to decrement the statistic by.
      * @return boolean True if successful, false if not.
      */
-    public static function decr($stat, $by = 1)
+    public static function decr($stat, $by = 1): bool
     {
         return (bool)Resque::redis()->decrby('stat:' . $stat, $by);
     }
@@ -51,7 +51,7 @@ class Resque_Stat
      * @param string $stat The name of the statistic to delete.
      * @return boolean True if successful, false if not.
      */
-    public static function clear($stat)
+    public static function clear($stat): bool
     {
         return (bool)Resque::redis()->del('stat:' . $stat);
     }
