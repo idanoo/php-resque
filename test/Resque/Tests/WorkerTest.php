@@ -271,9 +271,6 @@ class Resque_Tests_WorkerTest extends Resque_Tests_TestCase
 
     public function testBlockingListPop()
     {
-        $this->markTestSkipped("Skip temporarily");
-        return;
-
         $worker = new Resque_Worker('jobs');
         $worker->setLogger(new Resque_Log());
         $worker->registerWorker();
