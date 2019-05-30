@@ -21,7 +21,7 @@ test:7.0:
     - *docker_boostrap
   script:
     - phpunit --configuration phpunit.xml.dist
-  tag:
+  tags:
     - docker
 
 # Test PHP 7.2
@@ -31,7 +31,7 @@ test:7.1:
     - *docker_boostrap
   script:
     - phpunit --configuration phpunit.xml.dist
-  tag:
+  tags:
     - docker
 
 # Test PHP 7.2
@@ -41,5 +41,5 @@ test:7.2:
     - *docker_boostrap
   script:
     - phpunit --configuration phpunit.xml.dist
-  tag:
+  tags:
     - docker
