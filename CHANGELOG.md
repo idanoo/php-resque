@@ -1,3 +1,7 @@
+## 1.4.4 (2019-06-02)
+- Updated tests to run on GitLab CI.
+- Can now run tests locally using `gitlab-runner exec docker test:7.0`
+
 ## 1.4.3 (2018-07-16)
 - Updated README to include supervisor configuration.
 - Change logfile date format to `%Y-%m-%d %T`.

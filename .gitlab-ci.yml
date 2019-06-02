@@ -4,16 +4,18 @@
     
   # Install git (the php image doesn't have it) which is required by composer
   apt-get update -yq
-  apt-get install git redis-server -y
+  apt-get install git wget -y
 
-  # Install phpunit, the tool that we will use for testing
-  curl --location --output /usr/local/bin/phpunit https://phar.phpunit.de/phpunit.phar
-  chmod +x /usr/local/bin/phpunit
+  pecl install -o -f redis \
+  &&  rm -rf /tmp/pear \
+  &&  docker-php-ext-enable redis
+  docker-php-ext-install pcntl
 
-  # Install mysql driver
-  # Here you can install any other extension that you need
-  docker-php-ext-install redis
+  wget https://getcomposer.org/composer.phar
+  php composer.phar install
 
+services:
+  - redis:latest
 
 # Test PHP 7.0
 test:7.0:
@@ -21,16 +23,20 @@ test:7.0:
   before_script:
     - *docker_boostrap
   script:
+    - curl --location --output /usr/local/bin/phpunit https://phar.phpunit.de/phpunit-6.5.9.phar
+    - chmod +x /usr/local/bin/phpunit
     - phpunit --configuration phpunit.xml.dist
   tags:
     - docker
 
-# Test PHP 7.2
+# Test PHP 7.1
 test:7.1:
   image: php:7.1
   before_script:
     - *docker_boostrap
   script:
+    - curl --location --output /usr/local/bin/phpunit https://phar.phpunit.de/phpunit-7.5.9.phar
+    - chmod +x /usr/local/bin/phpunit
     - phpunit --configuration phpunit.xml.dist
   tags:
     - docker
@@ -41,6 +47,20 @@ test:7.2:
   before_script:
     - *docker_boostrap
   script:
+    - curl --location --output /usr/local/bin/phpunit https://phar.phpunit.de/phpunit.phar
+    - chmod +x /usr/local/bin/phpunit
+    - phpunit --configuration phpunit.xml.dist
+  tags:
+    - docker
+
+# Test PHP 7.3
+test:7.3:
+  image: php:7.3
+  before_script:
+    - *docker_boostrap
+  script:
+    - curl --location --output /usr/local/bin/phpunit https://phar.phpunit.de/phpunit.phar
+    - chmod +x /usr/local/bin/phpunit
     - phpunit --configuration phpunit.xml.dist
   tags:
     - docker

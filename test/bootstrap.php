@@ -3,82 +3,30 @@
  * Resque test bootstrap file - sets up a test environment.
  *
  * @package        Resque/Tests
- * @author        Chris Boulton <chris@bigcommerce.com>
+ * @author         Daniel Mason <daniel@m2.nz>
  * @license        http://www.opensource.org/licenses/mit-license.php
  */
 
 $loader = require __DIR__ . '/../vendor/autoload.php';
 $loader->add('Resque_Tests', __DIR__);
 
-define('TEST_MISC', realpath(__DIR__ . '/misc/'));
-define('REDIS_CONF', TEST_MISC . '/redis.conf');
+# Redis configuration
+global $redisTestServer;
+$redisTestServer = getenv("REDIS_SERVER") ?? "redis";
+Resque::setBackend($redisTestServer);
 
-// Attempt to start our own redis instance for tesitng.
-exec('which redis-server', $output, $returnVar);
-if ($returnVar != 0) {
-    echo "Cannot find redis-server in path. Please make sure redis is installed.\n";
-    exit(1);
+# Check Redis is accessable locally
+try {
+    $redisTest = new Resque_Redis($redisTestServer);
+} catch (Exception $e) {
+    throw new Exception("Unable to connect to redis. Please check there is a redis-server running.");
 }
+$redisTest = null;
 
-exec('cd ' . TEST_MISC . '; redis-server ' . REDIS_CONF, $output, $returnVar);
-usleep(500000);
-if ($returnVar != 0) {
-    echo "Cannot start redis-server.\n";
-    exit(1);
 
-}
 
-// Get redis port from conf
-$config = file_get_contents(REDIS_CONF);
-if (!preg_match('#^\s*port\s+([0-9]+)#m', $config, $matches)) {
-    echo "Could not determine redis port from redis.conf";
-    exit(1);
-}
-
-Resque::setBackend('localhost:' . $matches[1]);
-
-// Shutdown
-function killRedis($pid)
-{
-    if (getmypid() !== $pid) {
-        return; // don't kill from a forked worker
-    }
-    $config = file_get_contents(REDIS_CONF);
-    if (!preg_match('#^\s*pidfile\s+([^\s]+)#m', $config, $matches)) {
-        return;
-    }
-
-    $pidFile = TEST_MISC . '/' . $matches[1];
-    if (file_exists($pidFile)) {
-        $pid = trim(file_get_contents($pidFile));
-        posix_kill((int)$pid, 9);
-
-        if (is_file($pidFile)) {
-            unlink($pidFile);
-        }
-    }
-
-    // Remove the redis database
-    if (!preg_match('#^\s*dir\s+([^\s]+)#m', $config, $matches)) {
-        return;
-    }
-    $dir = $matches[1];
-
-    if (!preg_match('#^\s*dbfilename\s+([^\s]+)#m', $config, $matches)) {
-        return;
-    }
-
-    $filename = TEST_MISC . '/' . $dir . '/' . $matches[1];
-    if (is_file($filename)) {
-        unlink($filename);
-    }
-}
-
-register_shutdown_function('killRedis', getmypid());
-
+# Cleanup forked workers cleanly
 if (function_exists('pcntl_signal')) {
-    // Override INT and TERM signals, so they do a clean shutdown and also
-    // clean up redis-server as well.
     function sigint()
     {
         exit;
@@ -88,6 +36,7 @@ if (function_exists('pcntl_signal')) {
     pcntl_signal(SIGTERM, 'sigint');
 }
 
+# Bootstrap it
 class Test_Job
 {
     public static $called = false;

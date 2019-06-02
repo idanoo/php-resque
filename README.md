@@ -34,9 +34,15 @@ not exit with a status code as 0
 * Has built in support for `setUp` and `tearDown` methods, called
 pre and post jobs
 
+On top of the original fork (chrisboulton/php-resque) I have added:
+
+* Custom log levels
+* PHP7.0+ compatibility
+
+
 ## Requirements ##
 
-* PHP 7.0+ (May work with 5.6+, Untested)
+* PHP 7.0+
 * phpredis
 * Redis 2.2+
 

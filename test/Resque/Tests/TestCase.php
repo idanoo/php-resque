@@ -21,8 +21,10 @@ class Resque_Tests_TestCase extends PHPUnit\Framework\TestCase
     public function setUp()
     {
         // Setup redis connection for testing.
-        $this->redis = new Credis_Client('localhost', '6379');
-        Resque::setBackend('localhost');
+        global $redisTestServer;
+
+        $this->redis = new Credis_Client($redisTestServer, '6379');
+        Resque::setBackend($redisTestServer);
         $this->redis->flushAll();
     }
 }
