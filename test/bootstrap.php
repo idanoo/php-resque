@@ -12,7 +12,7 @@ $loader->add('Resque_Tests', __DIR__);
 
 # Redis configuration
 global $redisTestServer;
-$redisTestServer = getenv("REDIS_SERVER") ?? "redis";
+$redisTestServer = getenv("REDIS_SERVER") ?: "redis";
 Resque::setBackend($redisTestServer);
 
 # Check Redis is accessable locally
