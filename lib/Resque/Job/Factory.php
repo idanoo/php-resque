@@ -8,7 +8,7 @@ class Resque_Job_Factory implements Resque_Job_FactoryInterface
      * @param array $args
      * @param $queue
      * @return Resque_JobInterface
-     * @throws \Resque_Exception
+     * @throws Resque_Exception
      */
     public function create($className, $args, $queue)
     {

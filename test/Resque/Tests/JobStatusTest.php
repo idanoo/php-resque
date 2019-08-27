@@ -11,7 +11,7 @@
 class Resque_Tests_JobStatusTest extends Resque_Tests_TestCase
 {
     /**
-     * @var \Resque_Worker
+     * @var Resque_Worker
      */
     protected $worker;
 

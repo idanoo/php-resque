@@ -45,11 +45,11 @@ class Resque_Log extends Psr\Log\AbstractLogger
         if (array_search($level, $logLevels) <= array_search($this->logLevel, $logLevels)) {
             fwrite(
                 STDOUT,
-                '[' . $level . '][' . strftime('%Y-%m-%d %T') . '] ' . $this->interpolate($message, $context) . PHP_EOL
+                '[' . $level . '][' . strftime('%Y-%m-%d %T') . '] ' .
+                    $this->interpolate($message, $context) . PHP_EOL
             );
         }
         return;
-
     }
 
     /**

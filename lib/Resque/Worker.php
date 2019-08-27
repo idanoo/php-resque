@@ -254,8 +254,8 @@ class Resque_Worker
     }
 
     /**
-     * @param  bool $blocking
-     * @param  int $timeout
+     * @param bool $blocking
+     * @param int $timeout
      * @return object|boolean               Instance of Resque_Job if a job is found, false if not.
      */
     public function reserve($blocking = false, $timeout = null)
@@ -290,11 +290,11 @@ class Resque_Worker
      * when searching for jobs.
      *
      * If * is found in the list of queues, every queue will be searched in
-     * alphabetic order. (@see $fetch)
-     *
-     * @param boolean $fetch If true, and the queue is set to *, will fetch
+     * alphabetic order. (@param boolean $fetch If true, and the queue is set to *, will fetch
      * all queue names from redis.
      * @return array Array of associated queues.
+     * @see $fetch)
+     *
      */
     public function queues($fetch = true)
     {

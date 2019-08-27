@@ -185,7 +185,7 @@ class Resque_Redis
         // Check the URI scheme
         $validSchemes = ['redis', 'tcp'];
         if (isset($parts['scheme']) && !in_array($parts['scheme'], $validSchemes)) {
-            throw new \InvalidArgumentException("Invalid DSN. Supported schemes are " . implode(', ', $validSchemes));
+            throw new InvalidArgumentException("Invalid DSN. Supported schemes are " . implode(', ', $validSchemes));
         }
 
         // Allow simple 'hostname' format, which `parse_url` treats as a path, not host.

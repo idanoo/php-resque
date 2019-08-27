@@ -1,3 +1,7 @@
+## 1.4.5 (2019-08-28)
+- Added 'replaced' composer tag.
+- Formatting changes.
+
 ## 1.4.4 (2019-06-02)
 - Updated tests to run on GitLab CI.
 - Can now run tests locally using `gitlab-runner exec docker test:7.0`

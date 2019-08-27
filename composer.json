@@ -1,7 +1,11 @@
 {
 	"name": "idanoo/php-resque",
-	"version": "1.4.4",
+	"version": "1.4.5",
 	"type": "library",
+	"replace": {
+		"chrisboulton/php-resque":  "*",
+		"danhunsaker/php-resque": "*"
+	},
 	"description": "Redis backed library for creating background jobs and processing them later. Based on resque for Ruby. Originally forked from chrisboulton/php-resque.",
 	"keywords": ["job", "background", "redis", "resque"],
 	"homepage": "http://www.github.com/idanoo/php-resque/",

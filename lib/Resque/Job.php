@@ -57,7 +57,7 @@ class Resque_Job
      * @param string $id Unique identifier for tracking the job. Generated if not supplied.
      *
      * @return string
-     * @throws \InvalidArgumentException
+     * @throws InvalidArgumentException
      */
     public static function create($queue, $class, $args = null, $monitor = false, $id = null)
     {

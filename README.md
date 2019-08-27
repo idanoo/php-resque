@@ -1,4 +1,4 @@
-php-resque: PHP Resque Worker (and Enqueue)  [![Build Status](https://travis-ci.org/iDanoo/php-resque.svg?branch=master)](https://travis-ci.org/iDanoo/php-resque)
+php-resque: PHP Resque Worker (and Enqueue)
 ===========================================
 
 Resque is a Redis-backed library for creating background jobs, placing
