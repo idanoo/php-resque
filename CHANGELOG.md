@@ -1,3 +1,6 @@
+## 1.4.6 (2020-01-10)
+- Switched IF Statement order to prevent excess calls to redis.
+
 ## 1.4.5 (2019-08-28)
 - Added 'replaced' composer tag.
 - Formatting changes.

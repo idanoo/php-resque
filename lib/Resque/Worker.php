@@ -117,7 +117,7 @@ class Resque_Worker
      */
     public static function find($workerId)
     {
-        if (!self::exists($workerId) || false === strpos($workerId, ":")) {
+        if (false === strpos($workerId, ":") || !self::exists($workerId)) {
             return false;
         }
         /** @noinspection PhpUnusedLocalVariableInspection */
