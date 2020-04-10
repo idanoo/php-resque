@@ -10,7 +10,7 @@
 
 class Resque
 {
-    const VERSION = '1.4.6';
+    const VERSION = '1.4.7';
 
     const DEFAULT_INTERVAL = 5;
 
@@ -51,6 +51,7 @@ class Resque
      * Return an instance of the Resque_Redis class instantiated for Resque.
      *
      * @return Resque_Redis Instance of Resque_Redis.
+     *
      * @throws Resque_RedisException
      */
     public static function redis()
@@ -101,9 +102,10 @@ class Resque
      *
      * @param string $queue The name of the queue to add the job to.
      * @param array $item Job description as an array to be JSON encoded.
+     *
      * @return bool
      */
-    public static function push($queue, $item)
+    public static function push($queue, $item): bool
     {
         $encodedItem = json_encode($item);
         if ($encodedItem === false) {
@@ -122,6 +124,7 @@ class Resque
      * return it.
      *
      * @param string $queue The name of the queue to fetch an item from.
+     *
      * @return mixed Decoded item from the queue.
      */
     public static function pop($queue)
@@ -142,7 +145,7 @@ class Resque
      * @param array $items
      * @return integer number of deleted items
      */
-    public static function dequeue($queue, $items = Array())
+    public static function dequeue($queue, $items = [])
     {
         if (count($items) > 0) {
             return self::removeItems($queue, $items);
@@ -155,13 +158,14 @@ class Resque
      * Remove specified queue
      *
      * @param string $queue The name of the queue to remove.
-     * @return integer Number of deleted items
+     *
+     * @return int Number of deleted items
      */
-    public static function removeQueue($queue)
+    public static function removeQueue($queue): int
     {
         $num = self::removeList($queue);
         self::redis()->srem('queues', $queue);
-        return $num;
+        return intval($num);
     }
 
     /**
@@ -170,12 +174,13 @@ class Resque
      *
      * @param array $queues
      * @param int $timeout
+     *
      * @return array|null|void
      */
     public static function blpop(array $queues, $timeout)
     {
         $list = array();
-        foreach ($queues AS $queue) {
+        foreach ($queues as $queue) {
             $list[] = 'queue:' . $queue;
         }
 
@@ -192,10 +197,10 @@ class Resque
          */
         $queue = substr($item[0], strlen(self::redis()->getPrefix() . 'queue:'));
 
-        return array(
+        return [
             'queue' => $queue,
             'payload' => json_decode($item[1], true)
-        );
+        ];
     }
 
     /**
@@ -205,9 +210,9 @@ class Resque
      *
      * @return int The size of the queue.
      */
-    public static function size($queue)
+    public static function size($queue): int
     {
-        return self::redis()->llen('queue:' . $queue);
+        return intval(self::redis()->llen('queue:' . $queue));
     }
 
     /**
@@ -245,6 +250,7 @@ class Resque
      * Reserve and return the next available job in the specified queue.
      *
      * @param string $queue Queue to fetch next available job from.
+     *
      * @return false|object|Resque_Job
      */
     public static function reserve($queue)
@@ -257,13 +263,10 @@ class Resque
      *
      * @return array Array of queues.
      */
-    public static function queues()
+    public static function queues(): array
     {
         $queues = self::redis()->smembers('queues');
-        if (!is_array($queues)) {
-            $queues = array();
-        }
-        return $queues;
+        return is_array($queues) ? $queues : [];
     }
 
     /**
@@ -276,9 +279,10 @@ class Resque
      *
      * @param string $queue The name of the queue
      * @param array $items
-     * @return integer number of deleted items
+     *
+     * @return int number of deleted items
      */
-    private static function removeItems($queue, $items = Array())
+    private static function removeItems($queue, $items = []): int
     {
         $counter = 0;
         $originalQueue = 'queue:' . $queue;
