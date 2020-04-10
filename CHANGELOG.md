@@ -1,3 +1,7 @@
+## 1.4.7 (2020-04-11)
+- Update PHPUnit to 9
+- Start adding return types
+
 ## 1.4.6 (2020-01-10)
 - Switched IF Statement order to prevent excess calls to redis.
 

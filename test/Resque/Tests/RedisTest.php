@@ -181,12 +181,14 @@ class Resque_Tests_RedisTest extends Resque_Tests_TestCase
 
     /**
      * @dataProvider bogusDsnStringProvider
+     *
      * @expectedException InvalidArgumentException
+     *
      * @param $dsn
      */
     public function testParsingBogusDsnStringThrowsException($dsn)
     {
-        // The next line should throw an InvalidArgumentException
+        $this->expectException(InvalidArgumentException::class);
         Resque_Redis::parseDsn($dsn);
     }
 }

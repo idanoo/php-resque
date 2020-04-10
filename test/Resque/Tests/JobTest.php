@@ -12,7 +12,7 @@ class Resque_Tests_JobTest extends Resque_Tests_TestCase
 {
     protected $worker;
 
-    public function setUp()
+    public function setUp(): void
     {
         parent::setUp();
 
@@ -44,7 +44,9 @@ class Resque_Tests_JobTest extends Resque_Tests_TestCase
      */
     public function testObjectArgumentsCannotBePassedToJob()
     {
-        $args = new stdClass;
+        $this->expectException(InvalidArgumentException::class);
+
+        $args = new stdClass();
         $args->test = 'somevalue';
         Resque::enqueue('jobs', 'Test_Job', $args);
     }
@@ -121,6 +123,7 @@ class Resque_Tests_JobTest extends Resque_Tests_TestCase
      */
     public function testJobWithoutPerformMethodThrowsException()
     {
+        $this->expectException(Resque_Exception::class);
         Resque::enqueue('jobs', 'Test_Job_Without_Perform_Method');
         $job = $this->worker->reserve();
         $job->worker = $this->worker;
@@ -132,6 +135,7 @@ class Resque_Tests_JobTest extends Resque_Tests_TestCase
      */
     public function testInvalidJobThrowsException()
     {
+        $this->expectException(Resque_Exception::class);
         Resque::enqueue('jobs', 'Invalid_Job');
         $job = $this->worker->reserve();
         $job->worker = $this->worker;
@@ -334,7 +338,7 @@ class Resque_Tests_JobTest extends Resque_Tests_TestCase
         $this->assertEquals($removedItems, 2);
         $this->assertEquals(Resque::size($queue), 1);
         $item = Resque::pop($queue);
-        $this->assertInternalType('array', $item['args']);
+        $this->assertIsArray($item['args']);
         $this->assertEquals(10, $item['args'][0]['bar'], 'Wrong items were dequeued from queue!');
     }
 
