@@ -1,3 +1,8 @@
+## 2.0.0 (2021-02-19)
+- Moved to PSR-4
+- Namespaced codebase
+- Added more comments throughout
+
 ## 1.4.7 (2020-04-11)
 - Update PHPUnit to 9
 - Start adding return types
@@ -93,7 +98,7 @@ Changes by iskandar introduce improved support for using DSNs to connect to Redi
 * Pass queue name to afterEvent callback
 * Only declare RedisException if it doesn't already exist (Matt Heath)
 * Add support for Composer
-* Fix missing and incorrect paths for Resque and Resque_Job_Status classes in demo (jjfrey)
+* Fix missing and incorrect paths for Resque and \Resque\Job\Status classes in demo (jjfrey)
 * Disable autoload for the RedisException class_exists call (scragg0x)
 * General tidy up of comments and files/folders
 

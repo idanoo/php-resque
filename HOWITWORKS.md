@@ -14,9 +14,9 @@ What happens when you call `Resque::enqueue()`?
 4. `Resque_Job::create()` pushes the job to the requested queue (first
    argument)
 5. `Resque_Job::create()`, if status monitoring is enabled for the job (fourth
-   argument), calls `Resque_Job_Status::create()` with the job ID as its only
+   argument), calls `\Resque\Job\Status::create()` with the job ID as its only
    argument
-6. `Resque_Job_Status::create()` creates a key in Redis with the job ID in its
+6. `\Resque\Job\Status::create()` creates a key in Redis with the job ID in its
    name, and the current status (as well as a couple of timestamps) as its
    value, then returns control to `Resque_Job::create()`
 7. `Resque_Job::create()` returns control to `Resque::enqueue()`, with the job
@@ -85,15 +85,15 @@ How do the workers process the queues?
       * Worker
         1. The worker waits for the job process to complete
         2. If the exit status is not 0, the worker calls `Resque_Job->fail()` with
-           a `Resque_Job_DirtyExitException` as its only argument.
+           a `Resque\Job\DirtyExitException` as its only argument.
         3. `Resque_Job->fail()` triggers an `onFailure` event
         4. `Resque_Job->fail()` updates the job status from `RUNNING` to `FAILED`
         5. `Resque_Job->fail()` calls `Resque_Failure::create()` with the job
-           payload, the `Resque_Job_DirtyExitException`, the internal ID of the
+           payload, the `Resque\Job\DirtyExitException`, the internal ID of the
            worker, and the queue name as arguments
         6. `Resque_Failure::create()` creates a new object of whatever type has
            been set as the `Resque_Failure` "backend" handler; by default, this is
-           a `Resque_Failure_Redis` object, whose constructor simply collects the
+           a `ResqueFailureRedis` object, whose constructor simply collects the
            data passed into `Resque_Failure::create()` and pushes it into Redis
            in the `failed` queue
         7. `Resque_Job->fail()` increments two failure counters in Redis: one for

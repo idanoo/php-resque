@@ -12,9 +12,6 @@
   &&  docker-php-ext-enable redis
   docker-php-ext-install pcntl
 
-  # Hack to fix mismatched php versions
-  rm composer.lock
-
   # Install Composer
   wget https://getcomposer.org/composer.phar
   php composer.phar install --dev
@@ -28,6 +25,26 @@ test:7.4:
   before_script:
     - *docker_boostrap
   script:
-    - php vendor/bin/phpunit --verbose --configuration phpunit.xml.dist
+    - php vendor/bin/phpunit --verbose --configuration phpunit.xml
   tags:
     - docker
+
+# Test PHP 8.0
+test:8.0:
+  image: php:8.0
+  before_script:
+    - *docker_boostrap
+  script:
+    - php vendor/bin/phpunit --verbose --configuration phpunit.xml
+  tags:
+    - docker
+
+# Codestandards
+lint:
+  image: php:8.0
+  allow_failure: true
+  script:
+    - apt update && apt install -y wget unzip git
+    - wget https://getcomposer.org/composer.phar
+    - php composer.phar install --dev
+    - php -d memory_limit=256M vendor/bin/phpcs -s --standard=ruleset.xml

@@ -1,6 +1,5 @@
 {
 	"name": "idanoo/php-resque",
-	"version": "1.4.7",
 	"type": "library",
 	"replace": {
 		"chrisboulton/php-resque":  "*",
@@ -17,21 +16,25 @@
 		}
 	],
 	"require": {
-		"php": "^7.0",
-		"ext-pcntl": "*",
-		"ext-redis": "*",
-		"psr/log": "~1.0",
-		"colinmollenhour/credis": "^1.10"
+		"php": ">7.4",
+		"psr/log": "^1.1.0",
+		"colinmollenhour/credis": "^1.12.0"
 	},
 	"require-dev": {
-		"phpunit/phpunit": "^9"
+		"phpunit/phpunit": "^9",
+		"squizlabs/php_codesniffer": "3.*"
 	},
 	"bin": [
 		"bin/resque"
 	],
 	"autoload": {
-		"psr-0": {
-			"Resque": "lib"
+		"psr-4": {
+			"Resque\\": "src/Resque"
+		}
+	},
+	"autoload-dev": {
+		"psr-4": {
+			"Resque\\Test\\": "tests/Resque/Tests"
 		}
 	},
 	"support": {

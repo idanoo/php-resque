@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<ruleset name="phpresque" namespace="ezyVet\PHPCS">
+    <description>PSR12</description>
+
+    <file>.</file>
+
+    <exclude-pattern>vendor/</exclude-pattern>
+    <exclude-pattern>tests/</exclude-pattern>
+
+    <arg name="extensions" value="php" />
+    <arg name="colors"/>
+    <arg value="sp"/>
+    <arg name="parallel" value="16"/>
+    <arg name="report-width" value="140" />
+    <ini name="memory_limit" value="256M"/>
+
+    <rule ref="PSR12">
+        <!-- <severity>8</severity> -->
+        <show_warnings>0</show_warnings>
+    </rule>
+
+    <!-- <rule ref="PSR1.Classes.ClassDeclaration.MissingNamespace">
+        <exclude-pattern>src</exclude-pattern>
+    </rule> -->
+</ruleset>

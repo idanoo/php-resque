@@ -1,6 +1,8 @@
 php-resque: PHP Resque Worker (and Enqueue)
 ===========================================
 
+ [![pipeline status](https://gitlab.com/idanoo/php-resque/badges/master/pipeline.svg)](https://gitlab.com/idanoo/php-resque/-/commits/master) 
+ 
 Resque is a Redis-backed library for creating background jobs, placing
 those jobs on one or more queues, and processing them later.
 
@@ -366,8 +368,6 @@ When running workers, if you run workers via the default `bin/resque` script,
 your `APP_INCLUDE` script should initialize and register any listeners required
 for operation. If you have rolled your own worker manager, then it is again your
 responsibility to register listeners.
-
-A sample plugin is included in the `extras` directory.
 
 ### Events ###
 
