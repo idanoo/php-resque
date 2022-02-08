@@ -1,8 +1,6 @@
 php-resque: PHP Resque Worker (and Enqueue)
 ===========================================
 
- [![pipeline status](https://gitlab.com/idanoo/php-resque/badges/master/pipeline.svg)](https://gitlab.com/idanoo/php-resque/-/commits/master) 
- 
 Resque is a Redis-backed library for creating background jobs, placing
 those jobs on one or more queues, and processing them later.
 

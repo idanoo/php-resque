@@ -12,5 +12,4 @@ namespace Resque;
 
 class Exception extends \Exception
 {
-
 }

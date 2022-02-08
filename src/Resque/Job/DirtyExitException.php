@@ -11,5 +11,4 @@ namespace Resque\Job;
  */
 class DirtyExitException extends \RuntimeException
 {
-
 }

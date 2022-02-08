@@ -1,3 +1,6 @@
+## 2.0.1 (2022-02-08)
+- Composer upgrade
+
 ## 2.0.0 (2021-02-19)
 - Moved to PSR-4
 - Namespaced codebase

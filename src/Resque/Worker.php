@@ -149,6 +149,7 @@ class Worker
      *
      * @param int $interval How often to check for new jobs across the queues.
      * @param bool $blocking
+     *
      * @throws Resque_RedisException
      */
     public function work($interval = Resque::DEFAULT_INTERVAL, $blocking = false)
@@ -524,7 +525,7 @@ class Worker
             'run_at' => strftime('%a %b %d %H:%M:%S %Z %Y'),
             'payload' => $job->payload
         ]);
-        Resque::redis()->set('worker:' . $job->worker, $data);
+        Resque::redis()->setex('worker:' . $job->worker, 172800, $data);
     }
 
     /**

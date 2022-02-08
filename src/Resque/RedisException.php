@@ -12,5 +12,4 @@ namespace Resque;
 
 class RedisException extends \Exception
 {
-
 }
