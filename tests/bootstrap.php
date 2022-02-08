@@ -45,7 +45,6 @@ class TestJob
 
 class FailingJobException extends \Exception
 {
-
 }
 
 class FailingJob
@@ -58,7 +57,6 @@ class FailingJob
 
 class TestJobWithoutPerformMethod
 {
-
 }
 
 class TestJobWithSetUp
@@ -73,7 +71,6 @@ class TestJobWithSetUp
 
     public function perform()
     {
-
     }
 }
 
@@ -85,7 +82,6 @@ class TestJobWithTearDown
 
     public function perform()
     {
-
     }
 
     public function tearDown()

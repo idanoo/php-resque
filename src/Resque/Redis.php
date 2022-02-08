@@ -163,6 +163,7 @@ class Redis
      * Note: the 'user' part of the DSN is not used.
      *
      * @param string $dsn A DSN string
+     *
      * @return array An array of DSN compotnents, with 'false' values for any unknown components. e.g.
      *               [host, port, db, user, pass, options]
      */

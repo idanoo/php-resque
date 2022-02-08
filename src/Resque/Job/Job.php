@@ -59,6 +59,7 @@ class Job
      * @param string $id Unique identifier for tracking the job. Generated if not supplied.
      *
      * @return string
+     *
      * @throws \InvalidArgumentException
      */
     public static function create($queue, $class, $args = null, $monitor = false, $id = null)
@@ -91,6 +92,7 @@ class Job
      * instance of \Resque\Job\Job for it.
      *
      * @param string $queue The name of the queue to check for a job in.
+     *
      * @return false|object Null when there aren't any waiting jobs, instance of \Resque\Job\Job when a job was found.
      */
     public static function reserve($queue)
@@ -109,6 +111,7 @@ class Job
      *
      * @param array $queues
      * @param int $timeout
+     *
      * @return false|object Null when there aren't any waiting jobs, instance of \Resque\Job\Job when a job was found.
      */
     public static function reserveBlocking(array $queues, $timeout = null)
@@ -125,6 +128,8 @@ class Job
      * Update the status of the current job.
      *
      * @param int $status Status constant from \Resque\Job\Status indicating the current status of a job.
+     *
+     * @return bool
      */
     public function updateStatus($status): bool
     {
@@ -164,6 +169,7 @@ class Job
 
     /**
      * Get the instantiated object for this job that will be performing work.
+     *
      * @return \Resque\Job\JobInterface Instance of the object that this job belongs to.
      */
     public function getInstance()
@@ -182,6 +188,7 @@ class Job
      * associated with the job with the supplied arguments.
      *
      * @return bool
+     *
      * @throws \Resque\Exception When the job's class could not be found or it does not contain a perform method.
      */
     public function perform()
@@ -234,6 +241,7 @@ class Job
 
     /**
      * Re-queue the current job.
+     *
      * @return string
      */
     public function recreate()
@@ -269,6 +277,7 @@ class Job
 
     /**
      * @param FactoryInterface $jobFactory
+     *
      * @return Job
      */
     public function setJobFactory(FactoryInterface $jobFactory)
