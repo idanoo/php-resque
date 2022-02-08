@@ -11,5 +11,4 @@ namespace Resque\Job;
  */
 class DontPerform extends \Exception
 {
-
 }
