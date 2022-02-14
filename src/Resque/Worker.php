@@ -215,7 +215,9 @@ class Worker
 
             // Forked and we're the child. Run the job.
             if ($this->child === 0 || $this->child === false) {
-                $status = 'Processing ' . $job->queue . ' since ' . strftime('%F %T');
+                $status = 'Processing ' . $job->queue
+                    . ' (' . ($job->payload['class'] ?? '') . ') since '
+                    . date('Y-m-d H:i:s');
                 $this->updateProcLine($status);
                 $this->logger->log(\Psr\Log\LogLevel::INFO, $status);
                 /** @noinspection PhpParamsInspection */
@@ -227,7 +229,7 @@ class Worker
 
             if ($this->child > 0) {
                 // Parent process, sit and wait
-                $status = 'Forked ' . $this->child . ' at ' . strftime('%F %T');
+                $status = 'Forked ' . $this->child . ' at ' . date('Y-m-d H:i:s');
                 $this->updateProcLine($status);
                 $this->logger->log(\Psr\Log\LogLevel::INFO, $status);
 
@@ -489,7 +491,7 @@ class Worker
     public function registerWorker()
     {
         Resque::redis()->sadd('workers', (string)$this);
-        Resque::redis()->setex('worker:' . (string)$this . ':started', 172800, strftime('%a %b %d %H:%M:%S %Z %Y'));
+        Resque::redis()->setex('worker:' . (string)$this . ':started', 172800, date('D M d H:i:s T Y'));
     }
 
     /**
@@ -522,7 +524,7 @@ class Worker
         $job->updateStatus(\Resque\Job\Status::STATUS_RUNNING);
         $data = json_encode([
             'queue' => $job->queue,
-            'run_at' => strftime('%a %b %d %H:%M:%S %Z %Y'),
+            'run_at' => date('D M d H:i:s T Y'),
             'payload' => $job->payload
         ]);
         Resque::redis()->setex('worker:' . $job->worker, 172800, $data);
