@@ -47,7 +47,7 @@ class Log extends \Psr\Log\AbstractLogger
         if (array_search($level, $logLevels) <= array_search($this->logLevel, $logLevels)) {
             fwrite(
                 STDOUT,
-                '[' . $level . '][' . strftime('%Y-%m-%d %T') . '] ' .
+                '[' . $level . '][' . date('Y-m-d H:i:s') . '] ' .
                     $this->interpolate($message, $context) . PHP_EOL
             );
         }

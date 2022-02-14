@@ -1,3 +1,7 @@
+## 2.0.2 (2022-02-15)
+- Replace strftime with strtotime for PHP8.1 support
+- Added processing class into proc line for easier debugging
+
 ## 2.0.1 (2022-02-08)
 - Fixed issue with lingering keys causing constant memory growth
 - Add PHP8 support
