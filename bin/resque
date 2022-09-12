@@ -38,7 +38,9 @@ if (empty($QUEUE)) {
  */
 $REDIS_BACKEND = getenv('REDIS_BACKEND');
 
-// Override redis DB numbers
+/**
+ * REDIS_BACKEND_DB overrides default Redis DB
+ */
 $REDIS_BACKEND_DB = getenv('REDIS_BACKEND_DB');
 if (!empty($REDIS_BACKEND)) {
     if (empty($REDIS_BACKEND_DB)) {

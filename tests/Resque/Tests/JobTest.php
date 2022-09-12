@@ -34,7 +34,7 @@ class JobTest extends TestCase
         \Resque\Resque::enqueue('jobs', '\Resque\Test\TestJob');
 
         $job = \Resque\Job\Job::reserve('jobs');
-        if ($job == false) {
+        if (is_null($job)) {
             $this->fail('Job could not be reserved.');
         }
         $this->assertEquals('jobs', $job->queue);
@@ -76,7 +76,7 @@ class JobTest extends TestCase
     {
         \Resque\Resque::enqueue('jobs', '\Resque\Test\TestJob');
         \Resque\Job\Job::reserve('jobs');
-        $this->assertFalse(\Resque\Job\Job::reserve('jobs'));
+        $this->assertNull(\Resque\Job\Job::reserve('jobs'));
     }
 
     public function testRecreatedJobMatchesExistingJob()

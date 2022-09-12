@@ -12,7 +12,7 @@ namespace Resque;
 
 class Resque
 {
-    public const VERSION = '2.0.2';
+    public const VERSION = '2.0.3';
 
     public const DEFAULT_INTERVAL = 5;
 
@@ -58,7 +58,7 @@ class Resque
      */
     public static function redis()
     {
-        if (self::$redis !== null) {
+        if (!is_null(self::$redis)) {
             return self::$redis;
         }
 
@@ -113,11 +113,14 @@ class Resque
         if ($encodedItem === false) {
             return false;
         }
+
         self::redis()->sadd('queues', $queue);
+
         $length = self::redis()->rpush('queue:' . $queue, $encodedItem);
         if ($length < 1) {
             return false;
         }
+
         return true;
     }
 
@@ -253,9 +256,9 @@ class Resque
      *
      * @param string $queue Queue to fetch next available job from.
      *
-     * @return false|object|\Resque\Job\Job
+     * @return \Resque\Job\Job|null
      */
-    public static function reserve($queue)
+    public static function reserve($queue): ?\Resque\Job\Job
     {
         return \Resque\Job\Job::reserve($queue);
     }

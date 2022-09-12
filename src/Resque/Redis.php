@@ -104,9 +104,12 @@ class Redis
 
     /**
      * Set Redis namespace (prefix) default: resque
+     *
      * @param string $namespace
+     *
+     * @return void
      */
-    public static function prefix($namespace)
+    public static function prefix(string $namespace): void
     {
         if (substr($namespace, -1) !== ':' && $namespace != '') {
             $namespace .= ':';
@@ -119,6 +122,7 @@ class Redis
      * @param int $database A database number to select. However, if we find a valid database number in the DSN the
      *                      DSN-supplied value will be used instead and this parameter is ignored.
      * @param object $client Optional \Credis_Client instance instantiated by you
+     *
      * @throws \Resque\RedisException
      */
     public function __construct($server, $database = null, $client = null)
@@ -167,7 +171,7 @@ class Redis
      * @return array An array of DSN compotnents, with 'false' values for any unknown components. e.g.
      *               [host, port, db, user, pass, options]
      */
-    public static function parseDsn($dsn)
+    public static function parseDsn($dsn): array
     {
         if ($dsn == '') {
             // Use a sensible default for an empty DNS string
@@ -234,7 +238,9 @@ class Redis
      *
      * @param string $name The name of the method called.
      * @param array $args Array of supplied arguments to the method.
+     *
      * @return mixed Return value from Resident::call() based on the command.
+     *
      * @throws Resque_RedisException
      */
     public function __call($name, $args)
@@ -250,23 +256,18 @@ class Redis
         }
         try {
             return $this->driver->__call($name, $args);
-        } catch (\CredisException $e) {
+        } catch (\Exception $e) {
             throw new RedisException('Error communicating with Redis: ' . $e->getMessage(), 0, $e);
         }
     }
 
+    /**
+     * Returns redis prefix
+     *
+     * @return string
+     */
     public static function getPrefix(): string
     {
         return self::$defaultNamespace;
-    }
-
-    public static function removePrefix($string): string
-    {
-        $prefix = self::getPrefix();
-
-        if (substr($string, 0, strlen($prefix)) == $prefix) {
-            $string = substr($string, strlen($prefix), strlen($string));
-        }
-        return $string;
     }
 }

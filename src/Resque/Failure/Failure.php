@@ -25,8 +25,12 @@ class Failure
      * @param \Resque\Worker $worker Instance of Resque_Worker that was running this job when it failed.
      * @param string $queue The name of the queue that this job was fetched from.
      */
-    public static function create($payload, \Exception $exception, \Resque\Worker $worker, $queue)
-    {
+    public static function create(
+        $payload,
+        \Exception $exception,
+        \Resque\Worker $worker,
+        $queue
+    ) {
         $backend = self::getBackend();
         new $backend($payload, $exception, $worker, $queue);
     }
@@ -34,11 +38,11 @@ class Failure
     /**
      * Return an instance of the backend for saving job failures.
      *
-     * @return object|string
+     * @return string
      */
     public static function getBackend()
     {
-        if (self::$backend === null) {
+        if (is_null(self::$backend)) {
             self::$backend = '\\Resque\\Failure\\ResqueFailureRedis';
         }
 
@@ -51,8 +55,10 @@ class Failure
      * It is your responsibility to have the backend class loaded (or autoloaded)
      *
      * @param string $backend The class name of the backend to pipe failures to.
+     *
+     * @return void
      */
-    public static function setBackend($backend)
+    public static function setBackend(string $backend): void
     {
         self::$backend = $backend;
     }

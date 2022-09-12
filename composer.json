@@ -7,7 +7,7 @@
 	},
 	"description": "Redis backed library for creating background jobs and processing them later. Based on resque for Ruby. Originally forked from chrisboulton/php-resque.",
 	"keywords": ["job", "background", "redis", "resque", "php"],
-	"homepage": "http://www.github.com/idanoo/php-resque/",
+	"homepage": "https://tinker.nz/idanoo/php-resque/",
 	"license": "MIT",
 	"authors": [
 		{
@@ -18,7 +18,7 @@
 	"require": {
 		"php": ">7.4",
 		"psr/log": "^1.1.0",
-		"colinmollenhour/credis": "^1.12.0"
+		"colinmollenhour/credis": "^1.13.0"
 	},
 	"require-dev": {
 		"phpunit/phpunit": "^9",
@@ -38,7 +38,7 @@
 		}
 	},
 	"support": {
-		"issues": "https://github.com/idanoo/php-resque/issues",
-		"source": "https://github.com/idanoo/php-resque"
+		"issues": "https://tinker.nz/idanoo/php-resque/issues",
+		"source": "https://tinker.nz/idanoo/php-resque"
 	}
 }

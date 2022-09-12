@@ -1,3 +1,9 @@
+## 2.0.3 (2022-09-12)
+- Update composer packages
+- Added WoodpeckerCI tests
+- Updated links in composer package
+- Stricter typing
+
 ## 2.0.2 (2022-02-15)
 - Replace strftime with strtotime for PHP8.1 support
 - Added processing class into proc line for easier debugging

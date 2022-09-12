@@ -3,7 +3,7 @@
 namespace Resque;
 
 /**
- * Redis related exceptions
+ * Redis exceptions
  *
  * @package        Resque
  * @author         Daniel Mason <daniel@m2.nz>

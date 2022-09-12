@@ -62,7 +62,7 @@ class Job
      *
      * @throws \InvalidArgumentException
      */
-    public static function create($queue, $class, $args = null, $monitor = false, $id = null)
+    public static function create($queue, $class, $args = null, $monitor = false, $id = null): string
     {
         if (is_null($id)) {
             $id = \Resque\Resque::generateJobId();
@@ -93,13 +93,13 @@ class Job
      *
      * @param string $queue The name of the queue to check for a job in.
      *
-     * @return false|object Null when there aren't any waiting jobs, instance of \Resque\Job\Job when a job was found.
+     * @return Job|null Null when there aren't any waiting jobs, instance of \Resque\Job\Job when a job was found.
      */
-    public static function reserve($queue)
+    public static function reserve($queue): ?Job
     {
         $payload = \Resque\Resque::pop($queue);
         if (!is_array($payload)) {
-            return false;
+            return null;
         }
 
         return new Job($queue, $payload);
@@ -112,13 +112,13 @@ class Job
      * @param array $queues
      * @param int $timeout
      *
-     * @return false|object Null when there aren't any waiting jobs, instance of \Resque\Job\Job when a job was found.
+     * @return Job|null Null when there aren't any waiting jobs, instance of \Resque\Job\Job when a job was found.
      */
-    public static function reserveBlocking(array $queues, $timeout = null)
+    public static function reserveBlocking(array $queues, $timeout = null): ?Job
     {
         $item = \Resque\Resque::blpop($queues, $timeout);
         if (!is_array($item)) {
-            return false;
+            return null;
         }
 
         return new Job($item['queue'], $item['payload']);
@@ -292,9 +292,10 @@ class Job
      */
     public function getJobFactory()
     {
-        if ($this->jobFactory === null) {
+        if (is_null($this->jobFactory)) {
             $this->jobFactory = new Factory();
         }
+
         return $this->jobFactory;
     }
 }

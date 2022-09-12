@@ -1,6 +1,8 @@
 php-resque: PHP Resque Worker (and Enqueue)
 ===========================================
 
+[![Build Status](https://ci.tinker.nz/api/badges/idanoo/php-resque/status.svg)](https://ci.tinker.nz/idanoo/php-resque) 
+
 Resque is a Redis-backed library for creating background jobs, placing
 those jobs on one or more queues, and processing them later.
 
@@ -58,7 +60,7 @@ If you're not familiar with Composer, please see <http://getcomposer.org/>.
 ```json
 {
     "require": {
-        "idanoo/php-resque": "^1.4"
+        "idanoo/php-resque": "^2.0"
     }
 }
 ```
@@ -80,7 +82,7 @@ Jobs are queued as follows:
 
 ```php
 // Required if redis is located elsewhere
-Resque::setBackend('localhost:6379');
+Resque::setBackend('redis:6379');
 
 $args = ['name' => 'TestName'];
 
@@ -468,7 +470,7 @@ needing to directly examine the code), have a look at `HOWITWORKS.md`.
 ## Contributors ##
 
 ### Current Maintainers ###
-* @iDanoo
+* @idanoo
 
 ### Past Maintainer / Forked From ###
 

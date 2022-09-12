@@ -14,7 +14,7 @@ class Log extends \Psr\Log\AbstractLogger
 {
     public $logLevel;
 
-    public function __construct($logLevel = "warning")
+    public function __construct($logLevel = 'warning')
     {
         $this->logLevel = strtolower($logLevel);
     }
@@ -30,14 +30,14 @@ class Log extends \Psr\Log\AbstractLogger
     public function log($level, $message, array $context = [])
     {
         $logLevels = [
-            "emergency",
-            "alert",
-            "critical",
-            "error",
-            "warning",
-            "notice",
-            "info",
-            "debug",
+            'emergency',
+            'alert',
+            'critical',
+            'error',
+            'warning',
+            'notice',
+            'info',
+            'debug',
         ];
 
         /**

@@ -11,7 +11,6 @@ namespace Resque\Test;
  */
 
 $loader = require __DIR__ . '/../vendor/autoload.php';
-// $loader->add('Resque_Tests', __DIR__);
 
 # Redis configuration
 global $redisTestServer;

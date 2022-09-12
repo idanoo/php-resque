@@ -284,7 +284,7 @@ class Worker
 
         if ($blocking === true) {
             $job = \Resque\Job\Job::reserveBlocking($queues, $timeout);
-            if ($job) {
+            if (!is_null($job)) {
                 $this->logger->log(\Psr\Log\LogLevel::INFO, 'Found job on {queue}', ['queue' => $job->queue]);
                 return $job;
             }
@@ -292,7 +292,7 @@ class Worker
             foreach ($queues as $queue) {
                 $this->logger->log(\Psr\Log\LogLevel::INFO, 'Checking {queue} for jobs', ['queue' => $queue]);
                 $job = \Resque\Job\Job::reserve($queue);
-                if ($job) {
+                if (!is_null($job)) {
                     $this->logger->log(\Psr\Log\LogLevel::INFO, 'Found job on {queue}', ['queue' => $job->queue]);
                     return $job;
                 }
@@ -491,7 +491,7 @@ class Worker
     public function registerWorker()
     {
         Resque::redis()->sadd('workers', (string)$this);
-        Resque::redis()->setex('worker:' . (string)$this . ':started', 172800, date('D M d H:i:s T Y'));
+        Resque::redis()->setex('worker:' . (string)$this . ':started', 86400, date('D M d H:i:s T Y'));
     }
 
     /**
@@ -527,7 +527,7 @@ class Worker
             'run_at' => date('D M d H:i:s T Y'),
             'payload' => $job->payload
         ]);
-        Resque::redis()->setex('worker:' . $job->worker, 172800, $data);
+        Resque::redis()->setex('worker:' . $job->worker, 86400, $data);
     }
 
     /**
@@ -567,9 +567,10 @@ class Worker
      * Get a statistic belonging to this worker.
      *
      * @param string $stat Statistic to fetch.
+     *
      * @return int Statistic value.
      */
-    public function getStat($stat)
+    public function getStat(string $stat): int
     {
         return \Resque\Stat::get($stat . ':' . $this);
     }

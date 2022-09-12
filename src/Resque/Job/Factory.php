@@ -15,7 +15,9 @@ class Factory implements FactoryInterface
      * @param $className
      * @param array $args
      * @param $queue
+     *
      * @return \Resque\Job\JobInterface
+     *
      * @throws \Resque\Exception
      */
     public function create($className, $args, $queue)
@@ -28,13 +30,14 @@ class Factory implements FactoryInterface
 
         if (!method_exists($className, 'perform')) {
             throw new \Resque\Exception(
-                'Job class ' . $className . ' does not contain a perform method.'
+                'Job class ' . $className . ' does not contain a perform() method.'
             );
         }
 
         $instance = new $className();
         $instance->args = $args;
         $instance->queue = $queue;
+
         return $instance;
     }
 }

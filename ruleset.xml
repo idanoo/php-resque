@@ -15,11 +15,5 @@
     <ini name="memory_limit" value="256M"/>
 
     <rule ref="PSR12">
-        <!-- <severity>8</severity> -->
-        <show_warnings>0</show_warnings>
     </rule>
-
-    <!-- <rule ref="PSR1.Classes.ClassDeclaration.MissingNamespace">
-        <exclude-pattern>src</exclude-pattern>
-    </rule> -->
 </ruleset>
