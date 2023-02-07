@@ -35,6 +35,9 @@ if (function_exists('pcntl_signal')) {
 class TestJob
 {
     public static $called = false;
+    public $args = false;
+    public $queue;
+    public $job;
 
     public function perform()
     {
@@ -48,6 +51,11 @@ class FailingJobException extends \Exception
 
 class FailingJob
 {
+    public static $called = false;
+    public $args = false;
+    public $queue;
+    public $job;
+
     public function perform()
     {
         throw new FailingJobException('Message!');
@@ -62,6 +70,8 @@ class TestJobWithSetUp
 {
     public static $called = false;
     public $args = false;
+    public $queue;
+    public $job;
 
     public function setUp()
     {
@@ -78,6 +88,8 @@ class TestJobWithTearDown
 {
     public static $called = false;
     public $args = false;
+    public $queue;
+    public $job;
 
     public function perform()
     {

@@ -174,7 +174,7 @@ class Job
      */
     public function getInstance()
     {
-        if (!is_null($this->instance)) {
+        if (isset($this->instance) && !is_null($this->instance)) {
             return $this->instance;
         }
 
