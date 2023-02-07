@@ -1,3 +1,7 @@
+## 2.1.0 (2023-02-07)
+- Add PHP 8.1 / 8.2 unit tests
+- Updated code to be PHP 8.2 compliant
+
 ## 2.0.3 (2022-09-12)
 - Update composer packages
 - Added WoodpeckerCI tests

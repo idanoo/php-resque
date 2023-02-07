@@ -397,6 +397,11 @@ class JobTest extends TestCase
 
 class SomeJobClass implements \Resque\Job\JobInterface
 {
+    public static $called = false;
+    public $args = false;
+    public $queue;
+    public $job;
+
     /**
      * @return bool
      */
@@ -408,6 +413,11 @@ class SomeJobClass implements \Resque\Job\JobInterface
 
 class Some_Stub_Factory implements \Resque\Job\FactoryInterface
 {
+    public static $called = false;
+    public $args = false;
+    public $queue;
+    public $job;
+
     /**
      * @param $className
      * @param array $args

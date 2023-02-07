@@ -8,8 +8,8 @@
 
   # Install pcntl and redis extentions
   pecl install -o -f redis \
-  &&  rm -rf /tmp/pear \
-  &&  docker-php-ext-enable redis
+  && rm -rf /tmp/pear \
+  && docker-php-ext-enable redis
   docker-php-ext-install pcntl
 
   # Install Composer

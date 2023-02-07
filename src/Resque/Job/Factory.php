@@ -11,6 +11,10 @@ namespace Resque\Job;
  */
 class Factory implements FactoryInterface
 {
+    public ?Job $job;
+    public string $queue;
+    public array $args;
+
     /**
      * @param $className
      * @param array $args
