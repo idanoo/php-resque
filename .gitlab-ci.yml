@@ -16,22 +16,15 @@
   wget https://getcomposer.org/composer.phar
   php composer.phar install --dev
 
-services:
-  - redis:latest
-
-# Test PHP 7.4
-test:7.4:
-  image: php:7.4
-  before_script:
-    - *docker_boostrap
-  script:
-    - php vendor/bin/phpunit --verbose --configuration phpunit.xml
-  tags:
-    - docker
-
-# Test PHP 8.0
-test:8.1:
-  image: php:8.1
+# Test PHP
+test:
+  image: php:$PHP_VERSION
+  services:
+    - redis:$REDIS_VERSION
+  parallel:
+    matrix:
+      - PHP_VERSION: [7.4, 8.0, 8.1, 8.2]
+        REDIS_VERSION: [7]
   before_script:
     - *docker_boostrap
   script:
@@ -41,7 +34,7 @@ test:8.1:
 
 # Codestandards
 lint:
-  image: php:8.1
+  image: php:8.2
   allow_failure: true
   script:
     - apt update && apt install -y wget unzip git
