@@ -3,6 +3,7 @@ matrix:
     - 7.4
     - 8.0
     - 8.1
+    - 8.2
 
 pipeline:
   unit-tests:
@@ -19,7 +20,7 @@ pipeline:
 
 services:
   redis:
-    image: redis:latest
+    image: redis:7
 
 depends_on:
   - lint
