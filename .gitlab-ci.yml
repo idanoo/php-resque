@@ -16,15 +16,15 @@
   wget https://getcomposer.org/composer.phar
   php composer.phar install --dev
 
+services:
+  - redis:7
+
 # Test PHP
 test:
   image: php:$PHP_VERSION
-  services:
-    - redis:$REDIS_VERSION
   parallel:
     matrix:
-      - PHP_VERSION: [7.4, 8.0, 8.1, 8.2]
-        REDIS_VERSION: [7]
+      - PHP_VERSION: [ "7.4", "8.0", "8.1", "8.2" ]
   before_script:
     - *docker_boostrap
   script:
