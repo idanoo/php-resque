@@ -59,7 +59,11 @@ class Status
             'updated' => time(),
             'started' => time(),
         ];
-        \Resque\Resque::redis()->setex('job:' . $id . ':status', 86400, json_encode($statusPacket));
+        \Resque\Resque::redis()->set(
+            'job:' . $id . ':status',
+            json_encode($statusPacket),
+            ['ex' => time() + 86400],
+        );
     }
 
     /**
@@ -98,12 +102,12 @@ class Status
             'status' => $status,
             'updated' => time(),
         ];
-        \Resque\Resque::redis()->setex((string)$this, 86400, json_encode($statusPacket));
 
-        // Expire the status for completed jobs after 24 hours
-        if (in_array($status, self::$completeStatuses)) {
-            \Resque\Resque::redis()->expire((string)$this, 86400);
-        }
+        \Resque\Resque::redis()->set(
+            (string)$this,
+            json_encode($statusPacket),
+            ['ex' => time() + 86400],
+        );
     }
 
     /**

@@ -1,3 +1,7 @@
+# 2.1.1 (2023-03-20)
+- Changed setex to set with EX values
+- Added TTLs to missing keys
+
 ## 2.1.0 (2023-02-07)
 - Add PHP 8.1 / 8.2 unit tests
 - Updated code to be PHP 8.2 compliant

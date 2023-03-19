@@ -491,7 +491,11 @@ class Worker
     public function registerWorker()
     {
         Resque::redis()->sadd('workers', (string)$this);
-        Resque::redis()->setex('worker:' . (string)$this . ':started', 86400, date('D M d H:i:s T Y'));
+        Resque::redis()->set(
+            'worker:' . (string)$this . ':started',
+            date('D M d H:i:s T Y'),
+            ['ex' => time() + 86400],
+        );
     }
 
     /**
@@ -527,7 +531,12 @@ class Worker
             'run_at' => date('D M d H:i:s T Y'),
             'payload' => $job->payload
         ]);
-        Resque::redis()->setex('worker:' . $job->worker, 86400, $data);
+
+        Resque::redis()->set(
+            'worker:' . $job->worker, 
+            $data,
+            ['ex' => time() + 86400],
+        );
     }
 
     /**

@@ -29,11 +29,24 @@ class Stat
      *
      * @param string $stat The name of the statistic to increment.
      * @param int $by The amount to increment the statistic by.
-     * @return boolean True if successful, false if not.
+     *
+     * @return bool True if successful, false if not.
      */
-    public static function incr($stat, $by = 1): bool
+    public static function incr(string $stat, int $by = 1): bool
     {
-        return (bool)Resque::redis()->incrby('stat:' . $stat, $by);
+        // Make sure we set a TTL by default
+        $set = Resque::redis()->set(
+            'stat:' . $stat,
+            $by,
+            ['ex' => time() + 86400, 'nx'],
+        );
+
+        // If it already exists, return the incrby value
+        if (!$set) {
+            return (bool)Resque::redis()->incrby('stat:' . $stat, $by);
+        }
+
+        return true;
     }
 
     /**
@@ -41,9 +54,10 @@ class Stat
      *
      * @param string $stat The name of the statistic to decrement.
      * @param int $by The amount to decrement the statistic by.
-     * @return boolean True if successful, false if not.
+     *
+     * @return bool True if successful, false if not.
      */
-    public static function decr($stat, $by = 1): bool
+    public static function decr(string $stat, int $by = 1): bool
     {
         return (bool)Resque::redis()->decrby('stat:' . $stat, $by);
     }
@@ -52,10 +66,11 @@ class Stat
      * Delete a statistic with the given name.
      *
      * @param string $stat The name of the statistic to delete.
-     * @return boolean True if successful, false if not.
+     *
+     * @return bool True if successful, false if not.
      */
-    public static function clear($stat): bool
+    public static function clear(string $stat): bool
     {
-        return (bool)Resque::redis()->del('stat:' . $stat);
+        return (bool)Resque::redis()->unlink('stat:' . $stat);
     }
 }

@@ -14,7 +14,12 @@ class RedisTest extends TestCase
 {
     public function testRedisGetSet()
     {
-        $this->redis->setex("testKey", 3600, 24);
+        $this->redis->set(
+            'testKey',
+            24,
+            ['ex' => time() + 3600],
+        );
+
         $val = $this->redis->get("testKey");
         $this->assertEquals(24, $val);
     }
