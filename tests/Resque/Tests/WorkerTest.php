@@ -198,6 +198,9 @@ class WorkerTest extends TestCase
         $worker->work(0);
         $worker->work(0);
 
+        // Allow time for async unlink to work
+        sleep(2);
+
         $this->assertEquals(0, $worker->getStat('processed'));
         $this->assertEquals(0, $worker->getStat('failed'));
     }

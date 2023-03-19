@@ -71,6 +71,6 @@ class Stat
      */
     public static function clear(string $stat): bool
     {
-        return (bool)Resque::redis()->unlink('stat:' . $stat);
+        return (bool)Resque::redis()->del('stat:' . $stat);
     }
 }
