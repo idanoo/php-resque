@@ -533,7 +533,7 @@ class Worker
         ]);
 
         Resque::redis()->set(
-            'worker:' . $job->worker, 
+            'worker:' . $job->worker,
             $data,
             ['ex' => time() + 86400],
         );
