@@ -1,3 +1,7 @@
+# 2.1.2 (2023-03-22)
+- Update composer packages
+- Update git information (GitHub)
+
 # 2.1.1 (2023-03-20)
 - Changed setex to set with EX values
 - Added TTLs to missing keys
