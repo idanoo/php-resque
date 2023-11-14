@@ -1,4 +1,4 @@
-php-resque: PHP Resque Worker (and Enqueue)
+php-resque: PHP Background (Resque) Worker
 ===========================================
 
 Resque is a Redis-backed library for creating background jobs, placing
@@ -53,19 +53,9 @@ Composer package inside your project.
 
 If you're not familiar with Composer, please see <http://getcomposer.org/>.
 
-1. Add php-resque to your application's composer.json.
+1. Run `composer require idanoo/php-resque`.
 
-```json
-{
-    "require": {
-        "idanoo/php-resque": "^2.0"
-    }
-}
-```
-
-2. Run `composer install`.
-
-3. If you haven't already, add the Composer autoload to your project's
+2. If you haven't already, add the Composer autoload to your project's
    initialization file. (example)
 
 ```sh

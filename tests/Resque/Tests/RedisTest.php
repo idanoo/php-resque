@@ -17,7 +17,7 @@ class RedisTest extends TestCase
         $this->redis->set(
             'testKey',
             24,
-            ['ex' => time() + 3600],
+            ['ex' => 3600],
         );
 
         $val = $this->redis->get("testKey");

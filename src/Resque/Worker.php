@@ -486,15 +486,17 @@ class Worker
 
     /**
      * Register this worker in Redis.
-     * 48 hour TTL so we don't pollute the db on server termination.
+     * 48 hour TTL so we don't pollute the redis db on server termination.
+     *
+     * @return void
      */
-    public function registerWorker()
+    public function registerWorker(): void
     {
         Resque::redis()->sadd('workers', (string)$this);
         Resque::redis()->set(
             'worker:' . (string)$this . ':started',
             date('D M d H:i:s T Y'),
-            ['ex' => time() + 86400],
+            ['ex' => (86400 * 2)],
         );
     }
 
@@ -535,7 +537,7 @@ class Worker
         Resque::redis()->set(
             'worker:' . $job->worker,
             $data,
-            ['ex' => time() + 86400],
+            ['ex' => (86400 * 2)],
         );
     }
 

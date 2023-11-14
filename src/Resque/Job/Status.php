@@ -62,7 +62,7 @@ class Status
         \Resque\Resque::redis()->set(
             'job:' . $id . ':status',
             json_encode($statusPacket),
-            ['ex' => time() + 86400],
+            ['ex' => (86400 * 2)],
         );
     }
 
@@ -106,7 +106,7 @@ class Status
         \Resque\Resque::redis()->set(
             (string)$this,
             json_encode($statusPacket),
-            ['ex' => time() + 86400],
+            ['ex' => (86400 * 2)],
         );
     }
 

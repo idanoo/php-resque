@@ -1,3 +1,6 @@
+# 2.1.3 (2023-11-15)
+- Resolved issue with SET EX TTL's using unix-timestamps
+
 # 2.1.2 (2023-03-22)
 - Update composer packages
 - Update git information (GitHub)

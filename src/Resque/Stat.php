@@ -38,7 +38,7 @@ class Stat
         $set = Resque::redis()->set(
             'stat:' . $stat,
             $by,
-            ['ex' => time() + 86400, 'nx'],
+            ['ex' => (86400 * 2), 'nx'],
         );
 
         // If it already exists, return the incrby value
