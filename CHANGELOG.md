@@ -1,3 +1,7 @@
+# 2.2.0 (2023-03-20)
+- Update pacakges
+- Bump requirements to PHP >= 8.1
+
 # 2.1.3 (2023-11-15)
 - Resolved issue with SET EX TTL's using unix-timestamps
 

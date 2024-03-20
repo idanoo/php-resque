@@ -16,7 +16,7 @@
 		}
 	],
 	"require": {
-		"php": ">7.4",
+		"php": ">=8.1",
 		"psr/log": "^1.1.0",
 		"colinmollenhour/credis": "^1.14.0"
 	},
