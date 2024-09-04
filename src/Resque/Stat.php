@@ -38,7 +38,7 @@ class Stat
         $set = Resque::redis()->set(
             'stat:' . $stat,
             $by,
-            ['ex' => (86400 * 2), 'nx'],
+            ['ex' => Redis::DEFAULT_REDIS_TTL,  'nx'],
         );
 
         // If it already exists, return the incrby value

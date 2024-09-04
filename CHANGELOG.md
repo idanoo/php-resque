@@ -1,3 +1,6 @@
+# 2.3.0 (2024-09-04)
+- Update packages
+
 # 2.2.0 (2023-03-20)
 - Update pacakges
 - Bump requirements to PHP >= 8.1

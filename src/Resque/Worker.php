@@ -83,6 +83,7 @@ class Worker
 
     /**
      * Return all workers known to Resque as instantiated instances.
+     *
      * @return array
      */
     public static function all(): array
@@ -102,8 +103,10 @@ class Worker
     /**
      * Given a worker ID, check if it is registered/valid.
      *
-     * @param string $workerId ID of the worker.
-     * @return boolean True if the worker exists, false if not.
+     * @param string $workerId ID of the worker
+     *
+     * @return boolean True if the worker exists, false if not
+     *
      * @throws Resque_RedisException
      */
     public static function exists($workerId): bool
@@ -114,8 +117,10 @@ class Worker
     /**
      * Given a worker ID, find it and return an instantiated worker class for it.
      *
-     * @param string $workerId The ID of the worker.
-     * @return bool|Resque_Worker
+     * @param string $workerId The ID of the worker
+     *
+     * @return Resque_Worker|bool
+     *
      * @throws Resque_RedisException
      */
     public static function find($workerId)
@@ -123,11 +128,13 @@ class Worker
         if (false === strpos($workerId, ":") || !self::exists($workerId)) {
             return false;
         }
+
         /** @noinspection PhpUnusedLocalVariableInspection */
         list($hostname, $pid, $queues) = explode(':', $workerId, 3);
         $queues = explode(',', $queues);
         $worker = new self($queues);
         $worker->setId($workerId);
+
         return $worker;
     }
 
@@ -135,8 +142,10 @@ class Worker
      * Set the ID of this worker to a given ID string.
      *
      * @param string $workerId ID for the worker.
+     *
+     * @return void
      */
-    public function setId($workerId)
+    public function setId($workerId): void
     {
         $this->id = $workerId;
     }
@@ -150,9 +159,11 @@ class Worker
      * @param int $interval How often to check for new jobs across the queues.
      * @param bool $blocking
      *
+     * @return void
+     *
      * @throws Resque_RedisException
      */
-    public function work($interval = Resque::DEFAULT_INTERVAL, $blocking = false)
+    public function work($interval = Resque::DEFAULT_INTERVAL, $blocking = false): void
     {
         $this->updateProcLine('Starting');
         $this->startup();
@@ -251,11 +262,13 @@ class Worker
     }
 
     /**
-     * Process a single job.
+     * Process a single job
      *
-     * @param \Resque\Job\Job $job The job to be processed.
+     * @param \Resque\Job\Job $job The job to be processed
+     *
+     * @return void
      */
-    public function perform(\Resque\Job\Job $job)
+    public function perform(\Resque\Job\Job $job): void
     {
         try {
             Event::trigger('afterFork', $job);
@@ -273,7 +286,8 @@ class Worker
     /**
      * @param bool $blocking
      * @param int $timeout
-     * @return object|boolean               Instance of \Resque\Job\Job if a job is found, false if not.
+     *
+     * @return object|boolean - Instance of \Resque\Job\Job if a job is found, false if not
      */
     public function reserve($blocking = false, $timeout = null)
     {
@@ -304,16 +318,17 @@ class Worker
 
     /**
      * Return an array containing all of the queues that this worker should use
-     * when searching for jobs.
+     * when searching for jobs
      *
      * If * is found in the list of queues, every queue will be searched in
      * alphabetic order. (@param boolean $fetch If true, and the queue is set to *, will fetch
-     * all queue names from redis.
-     * @return array Array of associated queues.
-     * @see $fetch)
+     * all queue names from redis
      *
+     * @param boolean $fetch
+     *
+     * @return array Array of associated queues
      */
-    public function queues($fetch = true)
+    public function queues(bool $fetch = true): array
     {
         if (!in_array('*', $this->queues) || $fetch == false) {
             return $this->queues;
@@ -321,13 +336,16 @@ class Worker
 
         $queues = Resque::queues();
         sort($queues);
+
         return $queues;
     }
 
     /**
-     * Perform necessary actions to start a worker.
+     * Perform necessary actions to start a worker
+     *
+     * @return void
      */
-    private function startup()
+    private function startup(): void
     {
         $this->registerSigHandlers();
         $this->pruneDeadWorkers();
@@ -340,9 +358,11 @@ class Worker
      * the name of the currently running process to indicate the current state
      * of a worker.
      *
-     * @param string $status The updated process title.
+     * @param string $status The updated process title
+     *
+     * @return void
      */
-    private function updateProcLine($status)
+    private function updateProcLine($status): void
     {
         $processTitle = 'resque-' . Resque::VERSION . ': ' . $status;
         if (function_exists('cli_set_process_title') && PHP_OS !== 'Darwin') {
@@ -359,8 +379,10 @@ class Worker
      * INT: Shutdown immediately and stop processing jobs.
      * QUIT: Shutdown after the current job finishes processing.
      * USR1: Kill the forked child immediately and continue processing jobs.
+     *
+     * @return void
      */
-    private function registerSigHandlers()
+    private function registerSigHandlers(): void
     {
         if (!function_exists('pcntl_signal')) {
             return;
@@ -376,9 +398,11 @@ class Worker
     }
 
     /**
-     * Signal handler callback for USR2, pauses processing of new jobs.
+     * Signal handler callback for USR2, pauses processing of new jobs
+     *
+     * @return void
      */
-    public function pauseProcessing()
+    public function pauseProcessing(): void
     {
         $this->logger->log(\Psr\Log\LogLevel::NOTICE, 'USR2 received; pausing job processing');
         $this->paused = true;
@@ -387,8 +411,10 @@ class Worker
     /**
      * Signal handler callback for CONT, resumes worker allowing it to pick
      * up new jobs.
+     *
+     * @return void
      */
-    public function unPauseProcessing()
+    public function unPauseProcessing(): void
     {
         $this->logger->log(\Psr\Log\LogLevel::NOTICE, 'CONT received; resuming job processing');
         $this->paused = false;
@@ -397,8 +423,10 @@ class Worker
     /**
      * Schedule a worker for shutdown. Will finish processing the current job
      * and when the timeout interval is reached, the worker will shut down.
+     *
+     * @return void
      */
-    public function shutdown()
+    public function shutdown(): void
     {
         $this->shutdown = true;
         $this->logger->log(\Psr\Log\LogLevel::NOTICE, 'Shutting down');
@@ -407,8 +435,10 @@ class Worker
     /**
      * Force an immediate shutdown of the worker, killing any child jobs
      * currently running.
+     *
+     * @return void
      */
-    public function shutdownNow()
+    public function shutdownNow(): void
     {
         $this->shutdown();
         $this->killChild();
@@ -417,8 +447,10 @@ class Worker
     /**
      * Kill a forked child job immediately. The job it is processing will not
      * be completed.
+     *
+     * @return void
      */
-    public function killChild()
+    public function killChild(): void
     {
         if (!$this->child) {
             $this->logger->log(\Psr\Log\LogLevel::DEBUG, 'No child to kill.');
@@ -447,8 +479,10 @@ class Worker
      * This is a form of garbage collection to handle cases where the
      * server may have been killed and the Resque workers did not die gracefully
      * and therefore leave state information in Redis.
+     *
+     * @return void
      */
-    public function pruneDeadWorkers()
+    public function pruneDeadWorkers(): void
     {
         $workerPids = $this->workerPids();
         $workers = self::all();
@@ -474,7 +508,7 @@ class Worker
      *
      * @return array Array of Resque worker process IDs.
      */
-    public function workerPids()
+    public function workerPids(): array
     {
         $pids = [];
         exec('ps -A -o pid,command | grep [r]esque', $cmdOutput);
@@ -496,14 +530,16 @@ class Worker
         Resque::redis()->set(
             'worker:' . (string)$this . ':started',
             date('D M d H:i:s T Y'),
-            ['ex' => (86400 * 2)],
+            ['ex' => Redis::DEFAULT_REDIS_TTL],
         );
     }
 
     /**
      * Unregister this worker in Redis. (shutdown etc)
+     *
+     * @return void
      */
-    public function unregisterWorker()
+    public function unregisterWorker(): void
     {
         if (is_object($this->currentJob)) {
             $this->currentJob->fail(new \Resque\Job\DirtyExitException());
@@ -518,12 +554,15 @@ class Worker
     }
 
     /**
-     * Tell Redis which job we're currently working on.
+     * Tell Redis which job we're currently working on
      *
-     * @param \Resque\Job\Job $job \Resque\Job\Job instance containing the job we're working on.
+     * @param \Resque\Job\Job $job \Resque\Job\Job instance containing the job we're working on
+     *
+     * @return void
+     *
      * @throws Resque_RedisException
      */
-    public function workingOn(\Resque\Job\Job $job)
+    public function workingOn(\Resque\Job\Job $job): void
     {
         $job->worker = $this;
         $this->currentJob = $job;
@@ -537,15 +576,17 @@ class Worker
         Resque::redis()->set(
             'worker:' . $job->worker,
             $data,
-            ['ex' => (86400 * 2)],
+            ['ex' => Redis::DEFAULT_REDIS_TTL],
         );
     }
 
     /**
      * Notify Redis that we've finished working on a job, clearing the working
-     * state and incrementing the job stats.
+     * state and incrementing the job stats
+     *
+     * @return void
      */
-    public function doneWorking()
+    public function doneWorking(): void
     {
         $this->currentJob = null;
         Stat::incr('processed');
@@ -554,28 +595,29 @@ class Worker
     }
 
     /**
-     * Generate a string representation of this worker.
+     * Generate a string representation of this worker
      *
-     * @return string String identifier for this worker instance.
+     * @return string String identifier for this worker instance
      */
-    public function __toString()
+    public function __toString(): string
     {
-        return $this->id;
+        return (string) $this->id;
     }
 
     /**
-     * Return an object describing the job this worker is currently working on.
+     * Return an object describing the job this worker is currently working on
      *
-     * @return array Array with details of current job.
+     * @return array Array with details of current job
      */
     public function job(): array
     {
         $job = Resque::redis()->get('worker:' . $this);
+
         return $job ? json_decode($job, true) : [];
     }
 
     /**
-     * Get a statistic belonging to this worker.
+     * Get a statistic belonging to this worker
      *
      * @param string $stat Statistic to fetch.
      *
@@ -590,8 +632,10 @@ class Worker
      * Inject the logging object into the worker
      *
      * @param \Psr\Log\LoggerInterface $logger
+     *
+     * @return void
      */
-    public function setLogger(\Psr\Log\LoggerInterface $logger)
+    public function setLogger(\Psr\Log\LoggerInterface $logger): void
     {
         $this->logger = $logger;
     }

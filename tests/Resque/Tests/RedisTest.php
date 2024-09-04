@@ -17,7 +17,7 @@ class RedisTest extends TestCase
         $this->redis->set(
             'testKey',
             24,
-            ['ex' => 3600],
+            ['ex' => \Resque\Redis::DEFAULT_REDIS_TTL],
         );
 
         $val = $this->redis->get("testKey");

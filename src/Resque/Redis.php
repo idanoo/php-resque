@@ -14,12 +14,14 @@ class Redis
 {
     /**
      * Redis Client
+     *
      * @var \Credis_Client
      */
     private $driver;
 
     /**
      * Redis namespace
+     *
      * @var string
      */
     private static $defaultNamespace = 'resque:';
@@ -38,6 +40,11 @@ class Redis
      * The default Redis Database number
      */
     public const DEFAULT_DATABASE = 0;
+
+    /**
+     * Default Redis TTL (2 days)
+     */
+    public const DEFAULT_REDIS_TTL = 172800;
 
     /**
      * @var array List of all commands in Redis that supply a key as their
@@ -114,6 +121,7 @@ class Redis
         if (substr($namespace, -1) !== ':' && $namespace != '') {
             $namespace .= ':';
         }
+
         self::$defaultNamespace = $namespace;
     }
 
