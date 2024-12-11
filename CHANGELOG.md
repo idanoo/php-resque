@@ -1,3 +1,6 @@
+# 2.4.0 (2024-12-11)
+- Update packages (psr/log ^3.0.2)
+
 # 2.3.0 (2024-09-04)
 - Update packages
 

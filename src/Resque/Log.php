@@ -27,7 +27,7 @@ class Log extends \Psr\Log\AbstractLogger
      * @param array $context Variables to replace { placeholder }
      * @return null
      */
-    public function log($level, $message, array $context = [])
+    public function log($level, \Stringable|string $message, array $context = []): void
     {
         $logLevels = [
             'emergency',
