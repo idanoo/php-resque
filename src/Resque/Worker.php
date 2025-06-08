@@ -97,6 +97,7 @@ class Worker
         foreach ($workers as $workerId) {
             $instances[] = self::find($workerId);
         }
+
         return $instances;
     }
 

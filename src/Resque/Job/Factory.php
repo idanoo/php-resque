@@ -9,6 +9,7 @@ namespace Resque\Job;
  * @author         Daniel Mason <daniel@m2.nz>
  * @license        http://www.opensource.org/licenses/mit-license.php
  */
+
 class Factory implements FactoryInterface
 {
     public ?Job $job;
@@ -16,6 +17,8 @@ class Factory implements FactoryInterface
     public array $args;
 
     /**
+     * Create job factory
+     *
      * @param $className
      * @param array $args
      * @param $queue

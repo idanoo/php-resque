@@ -22,6 +22,7 @@ class Event
      *
      * @param string $event Name of event to be raised.
      * @param mixed $data Optional, any data that should be passed to each callback.
+     *
      * @return true
      */
     public static function trigger($event, $data = null)
@@ -49,7 +50,8 @@ class Event
      * Listen in on a given event to have a specified callback fired.
      *
      * @param string $event Name of event to listen on.
-     * @param mixed $callback Any callback callable by call_user_func_array.
+     * @param mixed $callback Any callback callable by call_user_func_array
+     *
      * @return true
      */
     public static function listen($event, $callback)
@@ -67,6 +69,7 @@ class Event
      *
      * @param string $event Name of event.
      * @param mixed $callback The callback as defined when listen() was called.
+     *
      * @return true
      */
     public static function stopListening($event, $callback)
@@ -85,8 +88,10 @@ class Event
 
     /**
      * Call all registered listeners.
+     *
+     * @return void
      */
-    public static function clearListeners()
+    public static function clearListeners(): void
     {
         self::$events = [];
     }

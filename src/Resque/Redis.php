@@ -97,17 +97,6 @@ class Redis
         'rename',
         'rpoplpush'
     ];
-    // sinterstore
-    // sunion
-    // sunionstore
-    // sdiff
-    // sdiffstore
-    // sinter
-    // smove
-    // mget
-    // msetnx
-    // mset
-    // renamenx
 
     /**
      * Set Redis namespace (prefix) default: resque

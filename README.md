@@ -42,7 +42,7 @@ On top of the original fork (chrisboulton/php-resque) I have added:
 
 ## Requirements ##
 
-* PHP 7.0+
+* PHP 8.1+
 * phpredis
 * Redis 2.2+
 
@@ -74,7 +74,7 @@ Resque::setBackend('redis:6379');
 
 $args = ['name' => 'TestName'];
 
-Resque::enqueue('default', 'My_Job', $args);
+Resque::enqueue('default', '\App\MyJobClass', $args);
 ```
 
 ### Defining Jobs ###
@@ -82,7 +82,9 @@ Resque::enqueue('default', 'My_Job', $args);
 Each job should be in its own class, and include a `perform` method.
 
 ```php
-class My_Job
+namespace \App;
+
+class MyJobClass
 {
     public function perform()
     {
@@ -105,7 +107,9 @@ The `tearDown` method, if defined, will be called after the job finishes.
 
 
 ```php
-class My_Job
+namespace App;
+
+class MyJobClass
 {
     public function setUp()
     {
@@ -129,17 +133,17 @@ class My_Job
 This method can be used to conveniently remove a job from a queue.
 
 ```php
-// Removes job class 'My_Job' of queue 'default'
-Resque::dequeue('default', ['My_Job']);
+// Removes job class '\App\MyJobClass' of queue 'default'
+Resque::dequeue('default', ['\App\MyJobClass']);
 
-// Removes job class 'My_Job' with Job ID '087df5819a790ac666c9608e2234b21e' of queue 'default'
-Resque::dequeue('default', ['My_Job' => '087df5819a790ac666c9608e2234b21e']);
+// Removes job class '\App\MyJobClass' with Job ID '087df5819a790ac666c9608e2234b21e' of queue 'default'
+Resque::dequeue('default', ['\App\MyJobClass' => '087df5819a790ac666c9608e2234b21e']);
 
-// Removes job class 'My_Job' with arguments of queue 'default'
-Resque::dequeue('default', ['My_Job' => ['foo' => 1, 'bar' => 2]]);
+// Removes job class '\App\MyJobClass' with arguments of queue 'default'
+Resque::dequeue('default', ['\App\MyJobClass' => ['foo' => 1, 'bar' => 2]]);
 
 // Removes multiple jobs
-Resque::dequeue('default', ['My_Job', 'My_Job2']);
+Resque::dequeue('default', ['\App\MyJobClass', '\App\MyJobClass2']);
 ```
 
 If no jobs are given, this method will dequeue all jobs matching the provided queue.
@@ -160,7 +164,7 @@ To track the status of a job, pass `true` as the fourth argument to
 returned:
 
 ```php
-$token = Resque::enqueue('default', 'My_Job', $args, true);
+$token = Resque::enqueue('default', '\App\MyJobClass', $args, true);
 echo $token;
 ```
 
