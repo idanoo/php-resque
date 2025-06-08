@@ -28,7 +28,7 @@ class Log extends \Psr\Log\AbstractLogger
      *
      * @return null
      */
-    public function log($level, string|\Stringable $message, array $context = []): void
+    public function log($level, $message, array $context = []): void
     {
         $logLevels = [
             'emergency',

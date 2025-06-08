@@ -12,7 +12,7 @@ namespace Resque;
 
 class Resque
 {
-    public const VERSION = '2.5.2';
+    public const VERSION = '2.5.3';
 
     public const DEFAULT_INTERVAL = 5;
 
