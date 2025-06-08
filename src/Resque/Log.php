@@ -25,9 +25,10 @@ class Log extends \Psr\Log\AbstractLogger
      * @param mixed $level PSR-3 log level constant, or equivalent string
      * @param string $message Message to log, may contain a { placeholder }
      * @param array $context Variables to replace { placeholder }
+     *
      * @return null
      */
-    public function log($level, \Stringable|string $message, array $context = []): void
+    public function log($level, string|\Stringable $message, array $context = []): void
     {
         $logLevels = [
             'emergency',
