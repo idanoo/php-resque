@@ -1,4 +1,7 @@
-# 2.5.0 (205-06-08)
+# 2.5.1 (2025-06-08)
+- Update psr/log version requirements
+
+# 2.5.0 (2025-06-08)
 - Update packages
 
 # 2.4.0 (2024-12-11)
