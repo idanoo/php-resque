@@ -44,7 +44,7 @@ class EventTest extends TestCase
         return $job;
     }
 
-    public function eventCallbackProvider()
+    public static function eventCallbackProvider()
     {
         return [
             ['beforePerform', 'beforePerformEventCallback'],

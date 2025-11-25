@@ -29,7 +29,7 @@ class RedisTest extends TestCase
      *
      * @return array
      */
-    public function validDsnStringProvider()
+    public static function validDsnStringProvider()
     {
         return [
             // Input , Expected output
@@ -166,7 +166,7 @@ class RedisTest extends TestCase
      * These DSN values should throw exceptions
      * @return array
      */
-    public function bogusDsnStringProvider()
+    public static function bogusDsnStringProvider()
     {
         return [
             ['http://foo.bar/'],

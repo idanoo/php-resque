@@ -82,64 +82,6 @@ class Worker
     }
 
     /**
-     * Return all workers known to Resque as instantiated instances.
-     *
-     * @return array
-     */
-    public static function all(): array
-    {
-        $workers = Resque::redis()->smembers('workers');
-        if (!is_array($workers)) {
-            $workers = [];
-        }
-
-        $instances = [];
-        foreach ($workers as $workerId) {
-            $instances[] = self::find($workerId);
-        }
-
-        return $instances;
-    }
-
-    /**
-     * Given a worker ID, check if it is registered/valid.
-     *
-     * @param string $workerId ID of the worker
-     *
-     * @return boolean True if the worker exists, false if not
-     *
-     * @throws Resque_RedisException
-     */
-    public static function exists($workerId): bool
-    {
-        return (bool)Resque::redis()->sismember('workers', $workerId);
-    }
-
-    /**
-     * Given a worker ID, find it and return an instantiated worker class for it.
-     *
-     * @param string $workerId The ID of the worker
-     *
-     * @return Resque_Worker|bool
-     *
-     * @throws Resque_RedisException
-     */
-    public static function find($workerId)
-    {
-        if (false === strpos($workerId, ":") || !self::exists($workerId)) {
-            return false;
-        }
-
-        /** @noinspection PhpUnusedLocalVariableInspection */
-        list($hostname, $pid, $queues) = explode(':', $workerId, 3);
-        $queues = explode(',', $queues);
-        $worker = new self($queues);
-        $worker->setId($workerId);
-
-        return $worker;
-    }
-
-    /**
      * Set the ID of this worker to a given ID string.
      *
      * @param string $workerId ID for the worker.
@@ -349,7 +291,6 @@ class Worker
     private function startup(): void
     {
         $this->registerSigHandlers();
-        $this->pruneDeadWorkers();
         Event::trigger('beforeFirstFork', $this);
         $this->registerWorker();
     }
@@ -474,36 +415,6 @@ class Worker
     }
 
     /**
-     * Look for any workers which should be running on this server and if
-     * they're not, remove them from Redis.
-     *
-     * This is a form of garbage collection to handle cases where the
-     * server may have been killed and the Resque workers did not die gracefully
-     * and therefore leave state information in Redis.
-     *
-     * @return void
-     */
-    public function pruneDeadWorkers(): void
-    {
-        $workerPids = $this->workerPids();
-        $workers = self::all();
-        foreach ($workers as $worker) {
-            if (is_object($worker)) {
-                list($host, $pid, $queues) = explode(':', (string)$worker, 3);
-                if ($host != $this->hostname || in_array($pid, $workerPids) || $pid == getmypid()) {
-                    continue;
-                }
-                $this->logger->log(
-                    \Psr\Log\LogLevel::INFO,
-                    'Pruning dead worker: {worker}',
-                    ['worker' => (string)$worker],
-                );
-                $worker->unregisterWorker();
-            }
-        }
-    }
-
-    /**
      * Return an array of process IDs for all of the Resque workers currently
      * running on this machine.
      *
@@ -527,7 +438,6 @@ class Worker
      */
     public function registerWorker(): void
     {
-        Resque::redis()->sadd('workers', (string)$this);
         Resque::redis()->set(
             'worker:' . (string)$this . ':started',
             date('D M d H:i:s T Y'),
@@ -547,7 +457,6 @@ class Worker
         }
 
         $id = (string)$this;
-        Resque::redis()->srem('workers', $id);
         Resque::redis()->del('worker:' . $id);
         Resque::redis()->del('worker:' . $id . ':started');
         Stat::clear('processed:' . $id);

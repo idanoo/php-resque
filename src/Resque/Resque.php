@@ -12,7 +12,7 @@ namespace Resque;
 
 class Resque
 {
-    public const VERSION = '2.5.3';
+    public const VERSION = '2.6.0';
 
     public const DEFAULT_INTERVAL = 5;
 
@@ -271,6 +271,7 @@ class Resque
     public static function queues(): array
     {
         $queues = self::redis()->smembers('queues');
+
         return is_array($queues) ? $queues : [];
     }
 

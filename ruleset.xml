@@ -23,7 +23,4 @@
 
     <rule ref="PSR12">
     </rule>
-
-    <rule ref="PHPCompatibility">
-    </rule>
 </ruleset>

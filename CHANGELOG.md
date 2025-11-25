@@ -1,7 +1,12 @@
+# 2.6.0 (2025-11-27)
+- Removed 'workers' set in redis. This served no actual purpose and the garbage collection caused issues when running at scale.
+- Updated support for PHP 8.5.
+- Updated packages.
+
 # 2.5.3 (2025-06-08)
 - Update typing of Log() to support all psr\log versions
 
-- # 2.5.2 (2025-06-08)
+# 2.5.2 (2025-06-08)
 - Update typing of Log() to support all psr\log versions
 
 # 2.5.1 (2025-06-08)
