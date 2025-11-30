@@ -1,3 +1,6 @@
+# 2.6.1 (2025-12-01)
+- Readd PHP 8.1 support
+
 # 2.6.0 (2025-11-27)
 - Removed 'workers' set in redis. This served no actual purpose and the garbage collection caused issues when running at scale.
 - Updated support for PHP 8.5.

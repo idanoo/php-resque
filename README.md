@@ -58,7 +58,7 @@ If you're not familiar with Composer, please see <http://getcomposer.org/>.
 2. If you haven't already, add the Composer autoload to your project's
    initialization file. (example)
 
-```sh
+```php
 require 'vendor/autoload.php';
 ```
 
@@ -335,7 +335,7 @@ You listen in on events (as listed below) by registering with `Resque_Event`
 and supplying a callback that you would like triggered when the event is
 raised:
 
-```sh
+```php
 Resque_Event::listen('eventName', [callback]);
 ```
 

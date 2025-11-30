@@ -415,22 +415,6 @@ class Worker
     }
 
     /**
-     * Return an array of process IDs for all of the Resque workers currently
-     * running on this machine.
-     *
-     * @return array Array of Resque worker process IDs.
-     */
-    public function workerPids(): array
-    {
-        $pids = [];
-        exec('ps -A -o pid,command | grep [r]esque', $cmdOutput);
-        foreach ($cmdOutput as $line) {
-            list($pids[],) = explode(' ', trim($line), 2);
-        }
-        return $pids;
-    }
-
-    /**
      * Register this worker in Redis.
      * 48 hour TTL so we don't pollute the redis db on server termination.
      *
