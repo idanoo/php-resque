@@ -122,7 +122,7 @@ class Redis
      *
      * @throws \Resque\RedisException
      */
-    public function __construct($server, $database = null, $client = null)
+    public function __construct(string|array $server, int $database = 0, $client = null)
     {
         try {
             if (is_object($client)) {
@@ -145,7 +145,9 @@ class Redis
                     $database = $dsnDatabase;
                 }
             }
-            if ($database !== null) {
+
+            // Don't call `select` if we are staying on database 0
+            if ($database > 0) {
                 $this->driver->select($database);
             }
         } catch (\Exception $e) {

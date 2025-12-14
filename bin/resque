@@ -2,6 +2,11 @@
 <?php
 
 // Find and initialize Composer
+
+use Psr\Log\LogLevel;
+use Resque\Redis;
+use Resque\Resque;
+
 $files = [
     __DIR__ . '/../../vendor/autoload.php',
     __DIR__ . '/../../../autoload.php',
@@ -25,8 +30,8 @@ if (!class_exists('Composer\Autoload\ClassLoader', false)) {
 }
 
 // Set which queues to monitor '*'
-$QUEUE = getenv('QUEUE');
-if (empty($QUEUE)) {
+$queue = getenv('QUEUE');
+if (empty($queue)) {
     die("Set QUEUE env var containing the list of queues to work.\n");
 }
 
@@ -36,95 +41,109 @@ if (empty($QUEUE)) {
  *
  * Note: the 'user' part of the DSN URI is required but is not used.
  */
-$REDIS_BACKEND = getenv('REDIS_BACKEND');
+$redisBackend = getenv('REDIS_BACKEND');
 
 /**
  * REDIS_BACKEND_DB overrides default Redis DB
  */
-$REDIS_BACKEND_DB = getenv('REDIS_BACKEND_DB');
-if (!empty($REDIS_BACKEND)) {
-    if (empty($REDIS_BACKEND_DB)) {
-        \Resque\Resque::setBackend($REDIS_BACKEND);
+$redisBackendDb = getenv('REDIS_BACKEND_DB');
+if (!empty($redisBackend)) {
+    if (empty($redisBackendDb)) {
+        \Resque\Resque::setBackend($redisBackend);
     } else {
-        \Resque\Resque::setBackend($REDIS_BACKEND, $REDIS_BACKEND_DB);
+        \Resque\Resque::setBackend($redisBackend, $redisBackendDb);
     }
 }
 
-// Set Logging level
-$logLevel = false;
-$LOGGING = getenv('LOGLEVEL');
-if (!empty($LOGGING)) {
-    $logLevel = $LOGGING;
+// Set Logging level - Default to INFO
+$logLevel = getenv('LOGLEVEL');
+if (!in_array($logLevel, [
+    LogLevel::DEBUG,
+    LogLevel::INFO,
+    LogLevel::NOTICE,
+    LogLevel::WARNING,
+    LogLevel::ERROR,
+    LogLevel::CRITICAL,
+    LogLevel::ALERT,
+    LogLevel::EMERGENCY,
+])) {
+    $logLevel = LogLevel::INFO;
 }
 
 // Bootstrap file
-$APP_INCLUDE = getenv('APP_INCLUDE');
-if ($APP_INCLUDE) {
-    if (!file_exists($APP_INCLUDE)) {
-        die('APP_INCLUDE (' . $APP_INCLUDE . ") does not exist.\n");
+$appInclude = getenv('APP_INCLUDE');
+if ($appInclude) {
+    if (!file_exists($appInclude)) {
+        die('APP_INCLUDE file (' . $appInclude . ") does not exist.\n");
     }
 
-    require_once $APP_INCLUDE;
+    require_once $appInclude;
 }
 
-// See if the APP_INCLUDE containes a logger object,
-// If none exists, fallback to internal logger
+// See if the APP_INCLUDE containes a $logger object, if none exists, fallback to internal logger
 if (!isset($logger) || !is_object($logger)) {
     $logger = new \Resque\Log($logLevel);
 }
 
 // Determines if blocking or not
-$BLOCKING = getenv('BLOCKING') !== FALSE;
+$blocking = getenv('BLOCKING') !== FALSE;
+$logger->log(LogLevel::DEBUG, 'Blocking set to {blocking}', ['blocking' => $blocking]);
 
 // Interval to check for jobs
-$interval = 5;
-$INTERVAL = getenv('INTERVAL');
-if (!empty($INTERVAL)) {
-    $interval = $INTERVAL;
+$interval = (int) getenv('INTERVAL');
+if (empty($interval) || $interval <= 0) {
+    $interval = Resque::DEFAULT_INTERVAL;
 }
+$logger->log(LogLevel::DEBUG, 'Interval set to {interval}', ['interval' => $interval]);
 
-// Sets worker count
-$count = 1;
-$COUNT = getenv('COUNT');
-if (!empty($COUNT) && $COUNT > 1) {
-    $count = $COUNT;
+// Set worker count
+$count = (int) getenv('COUNT');
+if (empty($count) || $count < 1) {
+    $count = 1;
 }
+$logger->log(LogLevel::DEBUG, 'Worker count set to {count}', ['count' => $count]);
 
-// Determines redis key prefix
-$PREFIX = getenv('PREFIX');
-if (!empty($PREFIX)) {
-    $logger->log(\Psr\Log\LogLevel::INFO, 'Prefix set to {prefix}', ['prefix' => $PREFIX]);
-    \Resque\Redis::prefix($PREFIX);
+// Set redis key prefix
+$redisPrefix = getenv('PREFIX');
+if (empty($redisPrefix)) {
+    $redisPrefix = 'phpresque:';
 }
+Redis::prefix($redisPrefix);
+$logger->log(LogLevel::DEBUG, 'Redis prefix set to {prefix}', ['prefix' => $redisPrefix]);
 
+// Start workers
 if ($count > 1) {
     for ($i = 0; $i < $count; ++$i) {
         $pid = \Resque\Resque::fork();
         if ($pid === false || $pid === -1) {
-            $logger->log(\Psr\Log\LogLevel::EMERGENCY, 'Could not fork worker {count}', ['count' => $i]);
+            // Parent, failed to fork child
+            $logger->log(LogLevel::EMERGENCY, 'Could not fork worker {count} - exiting', ['count' => $i]);
             die();
         } elseif (!$pid) {
             // Child, start the worker
-            $queues = explode(',', $QUEUE);
+            $queues = explode(',', $queue);
             $worker = new \Resque\Worker($queues);
             $worker->setLogger($logger);
-            $logger->log(\Psr\Log\LogLevel::NOTICE, 'Starting worker {worker}', ['worker' => $worker]);
-            $worker->work($interval, $BLOCKING);
+            $logger->log(LogLevel::NOTICE, 'Starting worker {worker}', ['worker' => $worker]);
+            $worker->work($interval, $blocking);
             break;
         }
     }
 } else {
     // Start a single worker
-    $queues = explode(',', $QUEUE);
+    $queues = explode(',', $queue);
     $worker = new \Resque\Worker($queues);
     $worker->setLogger($logger);
 
-    $PIDFILE = getenv('PIDFILE');
-    if ($PIDFILE) {
-        file_put_contents($PIDFILE, getmypid()) or
-        die('Could not write PID information to ' . $PIDFILE);
+    $pidFile = getenv('PIDFILE');
+    if ($pidFile) {
+        if (!file_put_contents($pidFile, getmypid())) {
+            $logger->log(LogLevel::ERROR, 'Could not write PID information to {pidFile}', ['pidFile' => $pidFile]);
+            die();
+        }
+        $logger->log(LogLevel::DEBUG, 'PID file {pidFile} written', ['pidFile' => $pidFile]);
     }
 
-    $logger->log(\Psr\Log\LogLevel::NOTICE, 'Starting worker {worker}', ['worker' => $worker]);
-    $worker->work($interval, $BLOCKING);
+    $logger->log(LogLevel::NOTICE, 'Starting worker {worker}', ['worker' => $worker]);
+    $worker->work($interval, $blocking);
 }

@@ -1,3 +1,6 @@
+# 2.7.0 (2025-12-19)
+- Cleaned up main bin/resque code
+
 # 2.6.1 (2025-12-01)
 - Readd PHP 8.1 support
 
