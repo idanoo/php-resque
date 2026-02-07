@@ -1,3 +1,8 @@
+# 2.6.2 (2026-02-07)
+- Update packages
+- Remove setproctitle in favour of cli_set_process_title
+- Add DISABLE_STATS env var to reduce redis load
+
 # 2.6.1 (2025-12-01)
 - Readd PHP 8.1 support
 

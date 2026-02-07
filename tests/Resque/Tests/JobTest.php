@@ -409,6 +409,20 @@ class SomeJobClass implements \Resque\Job\JobInterface
     {
         return true;
     }
+
+    /**
+     * @return void
+     */
+    public function setUp(): void
+    {
+    }
+
+    /**
+     * @return void
+     */
+    public function tearDown(): void
+    {
+    }
 }
 
 class Some_Stub_Factory implements \Resque\Job\FactoryInterface

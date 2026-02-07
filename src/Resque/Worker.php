@@ -304,14 +304,9 @@ class Worker
      *
      * @return void
      */
-    private function updateProcLine($status): void
+    private function updateProcLine(string $status): void
     {
-        $processTitle = 'resque-' . Resque::VERSION . ': ' . $status;
-        if (function_exists('cli_set_process_title') && PHP_OS !== 'Darwin') {
-            cli_set_process_title($processTitle);
-        } elseif (function_exists('setproctitle')) {
-            setproctitle($processTitle);
-        }
+        cli_set_process_title('resque-' . Resque::VERSION . ': ' . $status);
     }
 
     /**

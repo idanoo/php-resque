@@ -13,6 +13,23 @@ namespace Resque;
 class Stat
 {
     /**
+     * @var boolean Whether to disable stats collection.
+     */
+    protected static $disableStats = false;
+
+    /**
+     * Set whether to disable stats collection.
+     *
+     * @param bool $disableStats Whether to disable stats collection.
+     *
+     * @return void
+     */
+    public static function setDisableStats(bool $disableStats): void
+    {
+        self::$disableStats = $disableStats;
+    }
+
+    /**
      * Get the value of the supplied statistic counter for the specified statistic.
      *
      * @param string $stat The name of the statistic to get the stats for.
@@ -21,6 +38,10 @@ class Stat
      */
     public static function get(string $stat): int
     {
+        if (self::$disableStats) {
+            return 0;
+        }
+
         return (int)Resque::redis()->get('stat:' . $stat);
     }
 
@@ -34,6 +55,10 @@ class Stat
      */
     public static function incr(string $stat, int $by = 1): bool
     {
+        if (self::$disableStats) {
+            return true;
+        }
+
         // Make sure we set a TTL by default
         $set = Resque::redis()->set(
             'stat:' . $stat,
@@ -59,6 +84,10 @@ class Stat
      */
     public static function decr(string $stat, int $by = 1): bool
     {
+        if (self::$disableStats) {
+            return true;
+        }
+
         return (bool)Resque::redis()->decrby('stat:' . $stat, $by);
     }
 
@@ -71,6 +100,10 @@ class Stat
      */
     public static function clear(string $stat): bool
     {
+        if (self::$disableStats) {
+            return true;
+        }
+
         return (bool)Resque::redis()->del('stat:' . $stat);
     }
 }

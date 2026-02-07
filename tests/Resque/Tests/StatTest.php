@@ -50,4 +50,66 @@ class StatTest extends TestCase
     {
         $this->assertEquals(0, \Resque\Stat::get('test_get_unknown'));
     }
+
+    // Tests with DISABLE_STATS=true
+
+    public function testStatIncrNoOpWhenDisabled()
+    {
+        \Resque\Stat::setDisableStats(true);
+        $this->assertTrue(\Resque\Stat::incr('test_incr_disabled'));
+        $this->assertTrue(\Resque\Stat::incr('test_incr_disabled'));
+        $this->assertEmpty($this->redis->get('resque:stat:test_incr_disabled'));
+        \Resque\Stat::setDisableStats(false);
+    }
+
+    public function testStatIncrByXNoOpWhenDisabled()
+    {
+        \Resque\Stat::setDisableStats(true);
+        $this->assertTrue(\Resque\Stat::incr('test_incrX_disabled', 10));
+        $this->assertTrue(\Resque\Stat::incr('test_incrX_disabled', 11));
+        $this->assertEmpty($this->redis->get('resque:stat:test_incrX_disabled'));
+        \Resque\Stat::setDisableStats(false);
+    }
+
+    public function testStatDecrNoOpWhenDisabled()
+    {
+        \Resque\Stat::incr('test_decr_disabled', 22);
+        \Resque\Stat::setDisableStats(true);
+        $this->assertTrue(\Resque\Stat::decr('test_decr_disabled'));
+        $this->assertEquals(22, $this->redis->get('resque:stat:test_decr_disabled'));
+        \Resque\Stat::setDisableStats(false);
+    }
+
+    public function testStatDecrByXNoOpWhenDisabled()
+    {
+        \Resque\Stat::incr('test_decrX_disabled', 22);
+        \Resque\Stat::setDisableStats(true);
+        $this->assertTrue(\Resque\Stat::decr('test_decrX_disabled', 11));
+        $this->assertEquals(22, $this->redis->get('resque:stat:test_decrX_disabled'));
+        \Resque\Stat::setDisableStats(false);
+    }
+
+    public function testGetStatReturns0WhenDisabled()
+    {
+        \Resque\Stat::incr('test_get_disabled', 100);
+        \Resque\Stat::setDisableStats(true);
+        $this->assertEquals(0, \Resque\Stat::get('test_get_disabled'));
+        \Resque\Stat::setDisableStats(false);
+    }
+
+    public function testGetUnknownStatReturns0WhenDisabled()
+    {
+        \Resque\Stat::setDisableStats(true);
+        $this->assertEquals(0, \Resque\Stat::get('test_get_unknown_disabled'));
+        \Resque\Stat::setDisableStats(false);
+    }
+
+    public function testClearStatNoOpWhenDisabled()
+    {
+        \Resque\Stat::incr('test_clear_disabled', 50);
+        \Resque\Stat::setDisableStats(true);
+        $this->assertTrue(\Resque\Stat::clear('test_clear_disabled'));
+        \Resque\Stat::setDisableStats(false);
+        $this->assertEquals(50, $this->redis->get('resque:stat:test_clear_disabled'));
+    }
 }
