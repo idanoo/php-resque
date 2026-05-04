@@ -3,7 +3,7 @@
 namespace Resque\Test;
 
 /**
- * Resque_Event tests.
+ * \Resque\Event tests.
  *
  * @package        Resque/Tests
  * @author         Daniel Mason <daniel@m2.nz>
@@ -175,24 +175,14 @@ class RedisTest extends TestCase
         ];
     }
 
-    /**
-     * @dataProvider validDsnStringProvider
-     * @param $dsn
-     * @param $expected
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('validDsnStringProvider')]
     public function testParsingValidDsnString($dsn, $expected)
     {
         $result = \Resque\Redis::parseDsn($dsn);
         $this->assertEquals($expected, $result);
     }
 
-    /**
-     * @dataProvider bogusDsnStringProvider
-     *
-     * @expectedException \InvalidArgumentException
-     *
-     * @param $dsn
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('bogusDsnStringProvider')]
     public function testParsingBogusDsnStringThrowsException($dsn)
     {
         $this->expectException(\InvalidArgumentException::class);

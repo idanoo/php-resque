@@ -1,3 +1,8 @@
+# 3.0.0 (2026-05-04)
+- Update PHP to >=8.3
+- Update packages
+- Improve PHP8.5 support
+
 # 2.6.2 (2026-02-07)
 - Update packages
 - Remove setproctitle in favour of cli_set_process_title
@@ -137,7 +142,7 @@ Changes by iskandar introduce improved support for using DSNs to connect to Redi
 * Restructure tests and test bootstrapping. Autoload tests via Composer (install test dependencies with `composer install --dev`)
 * Add `SETEX` to list of commands which supply a key as the first argument in Redisent (danhunsaker)
 * Fix an issue where a lost connection to Redis could cause an infinite loop (atorres757)
-* Add a helper method to `Resque_Redis` to remove the namespace applied to Redis keys (tonypiper)
+* Add a helper method to `\Resque\Redis` to remove the namespace applied to Redis keys (tonypiper)
 * Call beforePerform hook before retrieivng an instance of the job class (allows beforePerform to cancel a job with DontPerform before initialising your application)
 * Add `beforeEnqueue` hook, called before a job is placed on a queue
 
@@ -158,7 +163,7 @@ Changes by iskandar introduce improved support for using DSNs to connect to Redi
 * Allow UNIX socket to be passed to Resque when connecting to Redis (pedroarnal)
 * Fix typographical errors in PHP docblocks (chaitanyakuber)
 * Set the queue name on job instances when jobs are executed (chaitanyakuber)
-* Fix and add tests for Resque_Event::stopListening (ebernhardson)
+* Fix and add tests for \Resque\Event::stopListening (ebernhardson)
 * Documentation cleanup (maetl)
 * Pass queue name to afterEvent callback
 * Only declare RedisException if it doesn't already exist (Matt Heath)

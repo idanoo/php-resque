@@ -12,8 +12,8 @@ namespace Resque\Test;
 
 class EventTest extends TestCase
 {
-    private $callbacksHit = [];
-    private $worker;
+    private array $callbacksHit = [];
+    private \Resque\Worker $worker;
 
     public function setUp(): void
     {
@@ -53,11 +53,7 @@ class EventTest extends TestCase
         ];
     }
 
-    /**
-     * @dataProvider eventCallbackProvider
-     * @param $event
-     * @param $callback
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('eventCallbackProvider')]
     public function testEventCallbacksFire($event, $callback)
     {
         \Resque\Event::listen($event, [$this, $callback]);
@@ -104,7 +100,7 @@ class EventTest extends TestCase
 
         $this->assertFalse($job->perform());
         $this->assertContains($callback, $this->callbacksHit, $callback . ' callback was not called');
-        $this->assertFalse(TestJob::$called, 'Job was still performed though Resque_Job_DontPerform was thrown');
+        $this->assertFalse(TestJob::$called, 'Job was still performed though \Resque\Job_DontPerform was thrown');
     }
 
     public function testBeforeEnqueueEventStopsJobCreation()
@@ -144,7 +140,7 @@ class EventTest extends TestCase
         $this->worker->work(0);
 
         $this->assertNotContains($callback, $this->callbacksHit,
-            $event . ' callback (' . $callback . ') was called though Resque_Event::stopListening was called'
+            $event . ' callback (' . $callback . ') was called though \Resque\Event::stopListening was called'
         );
     }
 

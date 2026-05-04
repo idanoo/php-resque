@@ -12,7 +12,7 @@ namespace Resque\Test;
 
 class JobTest extends TestCase
 {
-    protected $worker;
+    protected \Resque\Worker $worker;
 
     public function setUp(): void
     {
@@ -41,9 +41,6 @@ class JobTest extends TestCase
         $this->assertEquals('\Resque\Test\TestJob', $job->payload['class']);
     }
 
-    /**
-     * @expectedException \InvalidArgumentException
-     */
     public function testObjectArgumentsCannotBePassedToJob()
     {
         $this->expectException(\InvalidArgumentException::class);
@@ -120,9 +117,6 @@ class JobTest extends TestCase
         $this->assertEquals(1, \Resque\Stat::get('failed:' . $this->worker));
     }
 
-    /**
-     * @expectedException \Resque\Exception
-     */
     public function testJobWithoutPerformMethodThrowsException()
     {
         $this->expectException(\Resque\Exception::class);
@@ -132,9 +126,6 @@ class JobTest extends TestCase
         $job->perform();
     }
 
-    /**
-     * @expectedException \Resque\Exception
-     */
     public function testInvalidJobThrowsException()
     {
         $this->expectException(\Resque\Exception::class);

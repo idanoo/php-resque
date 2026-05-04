@@ -22,7 +22,7 @@ class Failure
      *
      * @param array $payload The contents of the job that has just failed.
      * @param \Exception $exception The exception generated when the job failed to run.
-     * @param \Resque\Worker $worker Instance of Resque_Worker that was running this job when it failed.
+     * @param \Resque\Worker $worker Instance of \Resque\Worker that was running this job when it failed.
      * @param string $queue The name of the queue that this job was fetched from.
      */
     public static function create(

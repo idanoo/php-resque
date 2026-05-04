@@ -3,13 +3,13 @@
 namespace Resque\Example;
 
 // Somewhere in our application, we need to register:
-// \Resque\Event::listen('afterEnqueue', ['My_Resque_Plugin', 'afterEnqueue']);
-// \Resque\Event::listen('beforeFirstFork', ['My_Resque_Plugin', 'beforeFirstFork']);
-// \Resque\Event::listen('beforeFork', ['My_Resque_Plugin', 'beforeFork']);
-// \Resque\Event::listen('afterFork', ['My_Resque_Plugin', 'afterFork']);
-// \Resque\Event::listen('beforePerform', ['My_Resque_Plugin', 'beforePerform']);
-// \Resque\Event::listen('afterPerform', ['My_Resque_Plugin', 'afterPerform']);
-// \Resque\Event::listen('onFailure', ['My_Resque_Plugin', 'onFailure']);
+// \Resque\Event::listen('afterEnqueue', ['My_\Resque\Plugin', 'afterEnqueue']);
+// \Resque\Event::listen('beforeFirstFork', ['My_\Resque\Plugin', 'beforeFirstFork']);
+// \Resque\Event::listen('beforeFork', ['My_\Resque\Plugin', 'beforeFork']);
+// \Resque\Event::listen('afterFork', ['My_\Resque\Plugin', 'afterFork']);
+// \Resque\Event::listen('beforePerform', ['My_\Resque\Plugin', 'beforePerform']);
+// \Resque\Event::listen('afterPerform', ['My_\Resque\Plugin', 'afterPerform']);
+// \Resque\Event::listen('onFailure', ['My_\Resque\Plugin', 'onFailure']);
 
 class SampleResquePlugin
 {
@@ -37,7 +37,7 @@ class SampleResquePlugin
     public static function beforePerform($job)
     {
         echo "Cancelling " . $job . "\n";
-        // throw new Resque_Job_DontPerform;
+        // throw new \Resque\Job_DontPerform;
     }
 
     public static function afterPerform($job)

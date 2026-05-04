@@ -104,7 +104,7 @@ class Worker
      *
      * @return void
      *
-     * @throws Resque_RedisException
+     * @throws \Resque\RedisException
      */
     public function work($interval = Resque::DEFAULT_INTERVAL, $blocking = false): void
     {
@@ -449,7 +449,7 @@ class Worker
      *
      * @return void
      *
-     * @throws Resque_RedisException
+     * @throws \Resque\RedisException
      */
     public function workingOn(\Resque\Job\Job $job): void
     {
