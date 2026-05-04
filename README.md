@@ -171,17 +171,17 @@ echo $token;
 To fetch the status of a job:
 
 ```php
-$status = new Resque_Job_Status($token);
+$status = new \Resque\Job_Status($token);
 echo $status->get(); // Outputs the status
 ```
 
-Job statuses are defined as constants in the `Resque_Job_Status` class.
+Job statuses are defined as constants in the `\Resque\Job_Status` class.
 Valid statuses include:
 
-* `Resque_Job_Status::STATUS_WAITING` - Job is still queued
-* `Resque_Job_Status::STATUS_RUNNING` - Job is currently running
-* `Resque_Job_Status::STATUS_FAILED` - Job has failed
-* `Resque_Job_Status::STATUS_COMPLETE` - Job is complete
+* `\Resque\Job_Status::STATUS_WAITING` - Job is still queued
+* `\Resque\Job_Status::STATUS_RUNNING` - Job is currently running
+* `\Resque\Job_Status::STATUS_FAILED` - Job has failed
+* `\Resque\Job_Status::STATUS_COMPLETE` - Job is complete
 * `false` - Failed to fetch the status - is the token valid?
 
 Statuses are available for up to 24 hours after a job has completed
@@ -331,12 +331,12 @@ automatically detect and use it.
 php-resque has a basic event system that can be used by your application
 to customize how some of the php-resque internals behave.
 
-You listen in on events (as listed below) by registering with `Resque_Event`
+You listen in on events (as listed below) by registering with `\Resque\Event`
 and supplying a callback that you would like triggered when the event is
 raised:
 
 ```php
-Resque_Event::listen('eventName', [callback]);
+\Resque\Event::listen('eventName', [callback]);
 ```
 
 `[callback]` may be anything in PHP that is callable by `call_user_func_array`:
@@ -349,12 +349,12 @@ Resque_Event::listen('eventName', [callback]);
 Events may pass arguments (documented below), so your callback should accept
 these arguments.
 
-You can stop listening to an event by calling `Resque_Event::stopListening`
-with the same arguments supplied to `Resque_Event::listen`.
+You can stop listening to an event by calling `\Resque\Event::stopListening`
+with the same arguments supplied to `\Resque\Event::listen`.
 
 It is up to your application to register event listeners. When enqueuing events
 in your application, it should be as easy as making sure php-resque is loaded
-and calling `Resque_Event::listen`.
+and calling `\Resque\Event::listen`.
 
 When running workers, if you run workers via the default `bin/resque` script,
 your `APP_INCLUDE` script should initialize and register any listeners required
@@ -365,13 +365,13 @@ responsibility to register listeners.
 
 #### beforeFirstFork ####
 
-Called once, as a worker initializes. Argument passed is the instance of `Resque_Worker`
+Called once, as a worker initializes. Argument passed is the instance of `\Resque\Worker`
 that was just initialized.
 
 #### beforeFork ####
 
 Called before php-resque forks to run a job. Argument passed contains the instance of
-`Resque_Job` for the job about to be run.
+`\Resque\Job` for the job about to be run.
 
 `beforeFork` is triggered in the **parent** process. Any changes made will be permanent
 for as long as the **worker** lives.
@@ -379,7 +379,7 @@ for as long as the **worker** lives.
 #### afterFork ####
 
 Called after php-resque forks to run a job (but before the job is run). Argument
-passed contains the instance of `Resque_Job` for the job about to be run.
+passed contains the instance of `\Resque\Job` for the job about to be run.
 
 `afterFork` is triggered in the **child** process after forking out to complete a job. Any
 changes made will only live as long as the **job** is being processed.
@@ -387,16 +387,16 @@ changes made will only live as long as the **job** is being processed.
 #### beforePerform ####
 
 Called before the `setUp` and `perform` methods on a job are run. Argument passed
-contains the instance of `Resque_Job` for the job about to be run.
+contains the instance of `\Resque\Job` for the job about to be run.
 
-You can prevent execution of the job by throwing an exception of `Resque_Job_DontPerform`.
+You can prevent execution of the job by throwing an exception of `\Resque\Job_DontPerform`.
 Any other exceptions thrown will be treated as if they were thrown in a job, causing the
 job to fail.
 
 #### afterPerform ####
 
 Called after the `perform` and `tearDown` methods on a job are run. Argument passed
-contains the instance of `Resque_Job` that was just run.
+contains the instance of `\Resque\Job` that was just run.
 
 Any exceptions thrown will be treated as if they were thrown in a job, causing the job
 to be marked as having failed.
@@ -406,7 +406,7 @@ to be marked as having failed.
 Called whenever a job fails. Arguments passed (in this order) include:
 
 * Exception - The exception that was thrown when the job failed
-* Resque_Job - The job that failed
+* \Resque\Job - The job that failed
 
 #### beforeEnqueue ####
 
@@ -418,7 +418,7 @@ Arguments passed (in this order) include:
 * Queue - string containing the name of the queue the job is to be enqueued in
 * ID - string containing the token of the job to be enqueued
 
-You can prevent enqueing of the job by throwing an exception of `Resque_Job_DontCreate`.
+You can prevent enqueing of the job by throwing an exception of `\Resque\Job_DontCreate`.
 
 #### afterEnqueue ####
 

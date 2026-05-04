@@ -12,12 +12,12 @@ namespace Resque;
 
 class Resque
 {
-    public const VERSION = '2.6.2';
+    public const VERSION = '3.0.0';
 
     public const DEFAULT_INTERVAL = 5;
 
     /**
-     * @var Resque_Redis Instance of Resque_Redis that talks to redis.
+     * @var \Resque\Redis Instance of Redis that talks to redis.
      */
     public static $redis = null;
 
@@ -38,7 +38,7 @@ class Resque
      *
      * @param mixed $server Host/port combination separated by a colon, DSN-formatted URI, or
      *                      a callable that receives the configured database ID
-     *                      and returns a Resque_Redis instance, or
+     *                      and returns a \Resque\Redis instance, or
      *                      a nested array of servers with host/port pairs.
      * @param int $database
      */
@@ -50,9 +50,9 @@ class Resque
     }
 
     /**
-     * Return an instance of the Resque_Redis class instantiated for Resque.
+     * Return an instance of the Redis class instantiated for Resque.
      *
-     * @return \Resque\Redis Instance of Resque_Redis.
+     * @return \Resque\Redis Instance of Redis.
      *
      * @throws \Resque\RedisException
      */
@@ -196,7 +196,7 @@ class Resque
         }
 
         /**
-         * Normally the Resque_Redis class returns queue names without the prefix
+         * Normally the \Resque\Redis class returns queue names without the prefix
          * But the blpop is a bit different. It returns the name as prefix:queue:name
          * So we need to strip off the prefix:queue: part
          */

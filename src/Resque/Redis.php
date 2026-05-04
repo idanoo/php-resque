@@ -238,7 +238,7 @@ class Redis
      *
      * @return mixed Return value from Resident::call() based on the command.
      *
-     * @throws Resque_RedisException
+     * @throws \Resque\RedisException
      */
     public function __call($name, $args)
     {
