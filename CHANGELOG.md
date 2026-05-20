@@ -1,3 +1,8 @@
+# 3.1.0 (2026-05-20)
+- Reduce redis calls across php-resque
+- Reduce N+1 issues in queue lookup loop
+- Remove status logic. Unusable at scale. (Removed 4th param in enqueue/create)
+
 # 3.0.0 (2026-05-04)
 - Update PHP to >=8.3
 - Update packages

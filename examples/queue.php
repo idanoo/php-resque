@@ -21,9 +21,9 @@ $args = [
     ],
 ];
 if (empty($argv[2])) {
-    $jobId = \Resque\Resque::enqueue('default', $argv[1], $args, true);
+    $jobId = \Resque\Resque::enqueue('default', $argv[1], $args);
 } else {
-    $jobId = \Resque\Resque::enqueue($argv[1], $argv[2], $args, true);
+    $jobId = \Resque\Resque::enqueue($argv[1], $argv[2], $args);
 }
 
 echo "Queued job " . $jobId . "\n\n";

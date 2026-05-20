@@ -12,7 +12,7 @@ namespace Resque;
 
 class Resque
 {
-    public const VERSION = '3.0.0';
+    public const VERSION = '3.1.0';
 
     public const DEFAULT_INTERVAL = 5;
 
@@ -102,26 +102,26 @@ class Resque
      * Push a job to the end of a specific queue. If the queue does not
      * exist, then create it as well.
      *
-     * @param string $queue The name of the queue to add the job to.
-     * @param array $item Job description as an array to be JSON encoded.
+     * @param string $queue The name of the queue to add the job to
+     * @param array $item Job description as an array to be JSON encoded
      *
      * @return bool
      */
-    public static function push($queue, $item): bool
+    public static function push(string $queue, array $item): bool
     {
         $encodedItem = json_encode($item);
         if ($encodedItem === false) {
             return false;
         }
 
-        self::redis()->sadd('queues', $queue);
+        $redis = self::redis();
+        $redis->multi();
+        $redis->sadd('queues', $queue);
+        $redis->rpush('queue:' . $queue, $encodedItem);
+        $result = $redis->exec();
 
-        $length = self::redis()->rpush('queue:' . $queue, $encodedItem);
-        if ($length < 1) {
-            return false;
-        }
-
-        return true;
+        // Return true if the job was pushed to the queue, otherwise false
+        return !(!is_array($result) || count($result) < 2 || (int)$result[1] < 1);
     }
 
     /**
@@ -226,11 +226,10 @@ class Resque
      * @param string $queue The name of the queue to place the job in.
      * @param string $class The name of the class that contains the code to execute the job.
      * @param array $args Any optional arguments that should be passed when the job is executed.
-     * @param boolean $trackStatus Set to true to be able to monitor the status of a job.
      *
      * @return string|boolean Job ID when the job was created, false if creation was cancelled due to beforeEnqueue
      */
-    public static function enqueue($queue, $class, $args = null, $trackStatus = false)
+    public static function enqueue($queue, $class, $args = null)
     {
         $id = Resque::generateJobId();
         $hookParams = [
@@ -245,7 +244,7 @@ class Resque
             return false;
         }
 
-        \Resque\Job\Job::create($queue, $class, $args, $trackStatus, $id);
+        \Resque\Job\Job::create($queue, $class, $args, $id);
         \Resque\Event::trigger('afterEnqueue', $hookParams);
 
         return $id;

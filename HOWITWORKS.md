@@ -13,15 +13,9 @@ What happens when you call `Resque::enqueue()`?
 3. `\Resque\Job::create()` generates a job ID (a "token" in most of the docs)
 4. `\Resque\Job::create()` pushes the job to the requested queue (first
    argument)
-5. `\Resque\Job::create()`, if status monitoring is enabled for the job (fourth
-   argument), calls `\Resque\Job\Status::create()` with the job ID as its only
-   argument
-6. `\Resque\Job\Status::create()` creates a key in Redis with the job ID in its
-   name, and the current status (as well as a couple of timestamps) as its
-   value, then returns control to `\Resque\Job::create()`
-7. `\Resque\Job::create()` returns control to `Resque::enqueue()`, with the job
+5. `\Resque\Job::create()` returns control to `Resque::enqueue()`, with the job
    ID as a return value
-8. `Resque::enqueue()` triggers the `afterEnqueue` event, then returns control
+6. `Resque::enqueue()` triggers the `afterEnqueue` event, then returns control
    to your application, again with the job ID as its return value
 
 ## Workers At Work ##
@@ -72,8 +66,7 @@ How do the workers process the queues?
     2. `\Resque\Worker::work()` calls `\Resque\Worker->workingOn()` with the new
        `\Resque\Job` object as its argument
     3. `\Resque\Worker->workingOn()` does some reference assignments to help keep
-       track of the worker/job relationship, then updates the job status from
-       `WAITING` to `RUNNING`
+       track of the worker/job relationship
     4. `\Resque\Worker->workingOn()` stores the new `\Resque\Job` object's payload
        in a Redis key associated to the worker itself (this is to prevent the job
        from being lost indefinitely, but does rely on that PID never being
@@ -87,18 +80,17 @@ How do the workers process the queues?
         2. If the exit status is not 0, the worker calls `\Resque\Job->fail()` with
            a `Resque\Job\DirtyExitException` as its only argument.
         3. `\Resque\Job->fail()` triggers an `onFailure` event
-        4. `\Resque\Job->fail()` updates the job status from `RUNNING` to `FAILED`
-        5. `\Resque\Job->fail()` calls `\Resque\Failure::create()` with the job
+        4. `\Resque\Job->fail()` calls `\Resque\Failure::create()` with the job
            payload, the `Resque\Job\DirtyExitException`, the internal ID of the
            worker, and the queue name as arguments
-        6. `\Resque\Failure::create()` creates a new object of whatever type has
+        5. `\Resque\Failure::create()` creates a new object of whatever type has
            been set as the `\Resque\Failure` "backend" handler; by default, this is
            a `ResqueFailureRedis` object, whose constructor simply collects the
            data passed into `\Resque\Failure::create()` and pushes it into Redis
            in the `failed` queue
-        7. `\Resque\Job->fail()` increments two failure counters in Redis: one for
+        6. `\Resque\Job->fail()` increments two failure counters in Redis: one for
            a total count, and one for the worker
-        8. `\Resque\Job->fail()` returns control to the worker (still in
+        7. `\Resque\Job->fail()` returns control to the worker (still in
            `\Resque\Worker::work()`) without a value
       * Job
         1. The job calls `\Resque\Worker->perform()` with the `\Resque\Job` as its
@@ -138,8 +130,7 @@ How do the workers process the queues?
             `\Resque\Worker->perform()`; any other situation returns the value
             `TRUE` along with control, instead
         17. The `try...catch` block in `\Resque\Worker->perform()` ends
-        18. `\Resque\Worker->perform()` updates the job status from `RUNNING` to
-            `COMPLETE`, then returns control, with no value, to the worker (again
+        18. `\Resque\Worker->perform()` returns control, with no value, to the worker (again
             still in `\Resque\Worker::work()`)
         19. `\Resque\Worker::work()` calls `exit(0)` to terminate the job process
             cleanly

@@ -27,6 +27,21 @@ class Worker
     private $queues = [];
 
     /**
+     * @var array|null Cached wildcard queue list to reduce repeated Redis calls.
+     */
+    private $cachedQueues = null;
+
+    /**
+     * @var float Timestamp of the wildcard queue cache refresh.
+     */
+    private $cachedQueuesAt = 0.0;
+
+    /**
+     * Refresh wildcard queue list after this many seconds.
+     */
+    private const WILDCARD_QUEUE_CACHE_TTL = 5.0;
+
+    /**
      * @var string The hostname of this worker.
      */
     private $hostname;
@@ -222,7 +237,6 @@ class Worker
             return;
         }
 
-        $job->updateStatus(\Resque\Job\Status::STATUS_COMPLETE);
         $this->logger->log(\Psr\Log\LogLevel::NOTICE, '{job} has finished', ['job' => $job]);
     }
 
@@ -277,10 +291,20 @@ class Worker
             return $this->queues;
         }
 
+        // Cache queues to prevent excess redis calls
+        if (
+            is_array($this->cachedQueues)
+            && (microtime(true) - $this->cachedQueuesAt) < self::WILDCARD_QUEUE_CACHE_TTL
+        ) {
+            return $this->cachedQueues;
+        }
+
         $queues = Resque::queues();
         sort($queues);
+        $this->cachedQueues = $queues;
+        $this->cachedQueuesAt = microtime(true);
 
-        return $queues;
+        return $this->cachedQueues;
     }
 
     /**
@@ -455,7 +479,6 @@ class Worker
     {
         $job->worker = $this;
         $this->currentJob = $job;
-        $job->updateStatus(\Resque\Job\Status::STATUS_RUNNING);
         $data = json_encode([
             'queue' => $job->queue,
             'run_at' => date('D M d H:i:s T Y'),
