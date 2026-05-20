@@ -55,14 +55,13 @@ class Job
      * @param string $queue The name of the queue to place the job in.
      * @param string $class The name of the class that contains the code to execute the job.
      * @param array $args Any optional arguments that should be passed when the job is executed.
-     * @param boolean $monitor Set to true to be able to monitor the status of a job.
      * @param string $id Unique identifier for tracking the job. Generated if not supplied.
      *
      * @return string
      *
      * @throws \InvalidArgumentException
      */
-    public static function create($queue, $class, $args = null, $monitor = false, $id = null): string
+    public static function create($queue, $class, $args = null, $id = null): string
     {
         if (is_null($id)) {
             $id = \Resque\Resque::generateJobId();
@@ -79,10 +78,6 @@ class Job
             'id' => $id,
             'queue_time' => microtime(true),
         ]);
-
-        if ($monitor) {
-            Status::create($id);
-        }
 
         return $id;
     }
@@ -122,35 +117,6 @@ class Job
         }
 
         return new Job($item['queue'], $item['payload']);
-    }
-
-    /**
-     * Update the status of the current job.
-     *
-     * @param int $status Status constant from \Resque\Job\Status indicating the current status of a job.
-     *
-     * @return bool
-     */
-    public function updateStatus($status): bool
-    {
-        if (empty($this->payload['id'])) {
-            return false;
-        }
-
-        $statusInstance = new Status($this->payload['id']);
-        $statusInstance->update($status);
-        return true;
-    }
-
-    /**
-     * Return the status of the current job.
-     *
-     * @return int The status of the job as one of the \Resque\Job\Status constants.
-     */
-    public function getStatus()
-    {
-        $status = new Status($this->payload['id']);
-        return $status->get();
     }
 
     /**
@@ -228,7 +194,6 @@ class Job
             'job' => $this,
         ]);
 
-        $this->updateStatus(Status::STATUS_FAILED);
         \Resque\Failure\Failure::create(
             $this->payload,
             $exception,
@@ -246,13 +211,7 @@ class Job
      */
     public function recreate()
     {
-        $status = new Status($this->payload['id']);
-        $monitor = false;
-        if ($status->isTracking()) {
-            $monitor = true;
-        }
-
-        return self::create($this->queue, $this->payload['class'], $this->getArguments(), $monitor);
+        return self::create($this->queue, $this->payload['class'], $this->getArguments());
     }
 
     /**

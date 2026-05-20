@@ -20,7 +20,7 @@ class Factory implements FactoryInterface
      * Create job factory
      *
      * @param $className
-     * @param array $args
+     * @param $args
      * @param $queue
      *
      * @return \Resque\Job\JobInterface

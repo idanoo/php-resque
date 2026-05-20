@@ -153,42 +153,6 @@ If no jobs are given, this method will dequeue all jobs matching the provided qu
 Resque::dequeue('default');
 ```
 
-### Tracking Job Statuses ###
-
-php-resque has the ability to perform basic status tracking of a queued
-job. The status information will allow you to check if a job is in the
-queue, is currently being run, has finished, or has failed.
-
-To track the status of a job, pass `true` as the fourth argument to
-`Resque::enqueue`. A token used for tracking the job status will be
-returned:
-
-```php
-$token = Resque::enqueue('default', '\App\MyJobClass', $args, true);
-echo $token;
-```
-
-To fetch the status of a job:
-
-```php
-$status = new \Resque\Job_Status($token);
-echo $status->get(); // Outputs the status
-```
-
-Job statuses are defined as constants in the `\Resque\Job_Status` class.
-Valid statuses include:
-
-* `\Resque\Job_Status::STATUS_WAITING` - Job is still queued
-* `\Resque\Job_Status::STATUS_RUNNING` - Job is currently running
-* `\Resque\Job_Status::STATUS_FAILED` - Job has failed
-* `\Resque\Job_Status::STATUS_COMPLETE` - Job is complete
-* `false` - Failed to fetch the status - is the token valid?
-
-Statuses are available for up to 24 hours after a job has completed
-or failed, and are then automatically expired. A status can also
-forcefully be expired by calling the `stop()` method on a status
-class.
-
 ## Workers ##
 
 Workers work in the exact same way as the Ruby workers. For complete
