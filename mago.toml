@@ -1,0 +1,13 @@
+php-version = "8.3"
+
+[source]
+paths = ["src", "tests"]
+
+[linter.rules.too-many-methods]
+enabled = false
+
+[linter.rules.cyclomatic-complexity]
+enabled = false
+
+[linter.rules.kan-defect]
+enabled = false

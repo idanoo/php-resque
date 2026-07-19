@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Resque\Test;
 
 /**
@@ -14,10 +16,7 @@ class FailureTest extends TestCase
 {
     public function testDefaultBackendIsRedis()
     {
-        $this->assertEquals(
-            '\\Resque\\Failure\\ResqueFailureRedis',
-            \Resque\Failure\Failure::getBackend()
-        );
+        static::assertEquals('\\Resque\\Failure\\ResqueFailureRedis', \Resque\Failure\Failure::getBackend());
     }
 
     public function testCustomBackendReceivesFailure()
@@ -31,10 +30,10 @@ class FailureTest extends TestCase
         $payload = ['class' => '\Resque\Test\TestJob', 'args' => [[]]];
         \Resque\Failure\Failure::create($payload, $exception, $worker, 'jobs');
 
-        $this->assertEquals($payload, TestFailureBackend::$payload);
-        $this->assertSame($exception, TestFailureBackend::$exception);
-        $this->assertEquals('jobs', TestFailureBackend::$queue);
-        $this->assertEquals((string)$worker, (string)TestFailureBackend::$worker);
+        static::assertEquals($payload, TestFailureBackend::$payload);
+        static::assertSame($exception, TestFailureBackend::$exception);
+        static::assertEquals('jobs', TestFailureBackend::$queue);
+        static::assertEquals((string) $worker, (string) TestFailureBackend::$worker);
     }
 
     public function testRedisBackendPushesFailureOntoFailedList()
@@ -47,16 +46,16 @@ class FailureTest extends TestCase
 
         new \Resque\Failure\ResqueFailureRedis($payload, $exception, $worker, 'jobs');
 
-        $this->assertEquals(1, $this->redis->llen('resque:failed'));
+        static::assertEquals(1, $this->redis->llen('resque:failed'));
 
-        $data = json_decode($this->redis->lindex('resque:failed', 0), true);
-        $this->assertEquals($payload, $data['payload']);
-        $this->assertEquals('Exception', $data['exception']);
-        $this->assertEquals('Something broke', $data['error']);
-        $this->assertEquals('jobs', $data['queue']);
-        $this->assertEquals((string)$worker, $data['worker']);
-        $this->assertNotEmpty($data['failed_at']);
-        $this->assertIsArray($data['backtrace']);
+        $data = json_decode($this->redis->lindex('resque:failed', 0), associative: true);
+        static::assertEquals($payload, $data['payload']);
+        static::assertEquals('Exception', $data['exception']);
+        static::assertEquals('Something broke', $data['error']);
+        static::assertEquals('jobs', $data['queue']);
+        static::assertEquals((string) $worker, $data['worker']);
+        static::assertNotEmpty($data['failed_at']);
+        static::assertIsArray($data['backtrace']);
     }
 
     public function testJobFailRecordsFailureAndIncrementsStats()
@@ -74,8 +73,8 @@ class FailureTest extends TestCase
 
         $job->fail(new \Exception('boom'));
 
-        $this->assertEquals(1, \Resque\Stat::get('failed'));
-        $this->assertEquals(1, \Resque\Stat::get('failed:' . (string)$worker));
-        $this->assertEquals(1, $this->redis->llen('resque:failed'));
+        static::assertEquals(1, \Resque\Stat::get('failed'));
+        static::assertEquals(1, \Resque\Stat::get('failed:' . (string) $worker));
+        static::assertEquals(1, $this->redis->llen('resque:failed'));
     }
 }

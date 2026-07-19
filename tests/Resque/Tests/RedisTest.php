@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Resque\Test;
 
 /**
@@ -14,30 +16,26 @@ class RedisTest extends TestCase
 {
     public function testRedisGetSet()
     {
-        $this->redis->set(
-            'testKey',
-            24,
-            ['ex' => \Resque\Redis::DEFAULT_REDIS_TTL],
-        );
+        $this->redis->set('testKey', 24, ['ex' => \Resque\Redis::DEFAULT_REDIS_TTL]);
 
-        $val = $this->redis->get("testKey");
-        $this->assertEquals(24, $val);
+        $val = $this->redis->get('testKey');
+        static::assertEquals(24, $val);
     }
 
     public function testDefaultPrefixIsResque()
     {
         \Resque\Redis::prefix('resque');
-        $this->assertEquals('resque:', \Resque\Redis::getPrefix());
+        static::assertEquals('resque:', \Resque\Redis::getPrefix());
     }
 
     public function testPrefixAppendsTrailingColon()
     {
         \Resque\Redis::prefix('myapp');
-        $this->assertEquals('myapp:', \Resque\Redis::getPrefix());
+        static::assertEquals('myapp:', \Resque\Redis::getPrefix());
 
         // A prefix that already ends in a colon is left untouched.
         \Resque\Redis::prefix('myapp:');
-        $this->assertEquals('myapp:', \Resque\Redis::getPrefix());
+        static::assertEquals('myapp:', \Resque\Redis::getPrefix());
 
         // Restore the default so later tests are unaffected.
         \Resque\Redis::prefix('resque');
@@ -49,7 +47,7 @@ class RedisTest extends TestCase
 
         // \Resque\Redis prefixes keys transparently; the raw Credis client does not.
         \Resque\Resque::redis()->set('prefixed', 'value');
-        $this->assertEquals('value', $this->redis->get('resque:prefixed'));
+        static::assertEquals('value', $this->redis->get('resque:prefixed'));
     }
 
     /**
@@ -61,139 +59,215 @@ class RedisTest extends TestCase
     {
         return [
             // Input , Expected output
-            ['', [
+            [
+                '',
+                [
+                    'localhost',
+                    \Resque\Redis::DEFAULT_PORT,
+                    false,
+                    false,
+                    false,
+                    [],
+                ],
+            ],
+            [
                 'localhost',
-                \Resque\Redis::DEFAULT_PORT,
-                false,
-                false, false,
-                [],
-            ]],
-            ['localhost', [
-                'localhost',
-                \Resque\Redis::DEFAULT_PORT,
-                false,
-                false, false,
-                [],
-            ]],
-            ['localhost:1234', [
-                'localhost',
-                1234,
-                false,
-                false, false,
-                [],
-            ]],
-            ['localhost:1234/2', [
-                'localhost',
-                1234,
-                2,
-                false, false,
-                [],
-            ]],
-            ['redis://foobar', [
-                'foobar',
-                \Resque\Redis::DEFAULT_PORT,
-                false,
-                false, false,
-                [],
-            ]],
-            ['redis://foobar/', [
-                'foobar',
-                \Resque\Redis::DEFAULT_PORT,
-                false,
-                false, false,
-                [],
-            ]],
-            ['redis://foobar:1234', [
-                'foobar',
-                1234,
-                false,
-                false, false,
-                [],
-            ]],
-            ['redis://foobar:1234/15', [
-                'foobar',
-                1234,
-                15,
-                false, false,
-                [],
-            ]],
-            ['redis://foobar:1234/0', [
-                'foobar',
-                1234,
-                0,
-                false, false,
-                [],
-            ]],
-            ['redis://user@foobar:1234', [
-                'foobar',
-                1234,
-                false,
-                'user', false,
-                [],
-            ]],
-            ['redis://user@foobar:1234/15', [
-                'foobar',
-                1234,
-                15,
-                'user', false,
-                [],
-            ]],
-            ['redis://user:pass@foobar:1234', [
-                'foobar',
-                1234,
-                false,
-                'user', 'pass',
-                [],
-            ]],
-            ['redis://user:pass@foobar:1234?x=y&a=b', [
-                'foobar',
-                1234,
-                false,
-                'user', 'pass',
-                ['x' => 'y', 'a' => 'b'],
-            ]],
-            ['redis://:pass@foobar:1234?x=y&a=b', [
-                'foobar',
-                1234,
-                false,
-                false, 'pass',
-                ['x' => 'y', 'a' => 'b'],
-            ]],
-            ['redis://user@foobar:1234?x=y&a=b', [
-                'foobar',
-                1234,
-                false,
-                'user', false,
-                ['x' => 'y', 'a' => 'b'],
-            ]],
-            ['redis://foobar:1234?x=y&a=b', [
-                'foobar',
-                1234,
-                false,
-                false, false,
-                ['x' => 'y', 'a' => 'b'],
-            ]],
-            ['redis://user@foobar:1234/12?x=y&a=b', [
-                'foobar',
-                1234,
-                12,
-                'user', false,
-                ['x' => 'y', 'a' => 'b'],
-            ]],
-            ['tcp://user@foobar:1234/12?x=y&a=b', [
-                'foobar',
-                1234,
-                12,
-                'user', false,
-                ['x' => 'y', 'a' => 'b'],
-            ]],
-            ['unix:///tmp/redis.sock', [
+                [
+                    'localhost',
+                    \Resque\Redis::DEFAULT_PORT,
+                    false,
+                    false,
+                    false,
+                    [],
+                ],
+            ],
+            [
+                'localhost:1234',
+                [
+                    'localhost',
+                    1234,
+                    false,
+                    false,
+                    false,
+                    [],
+                ],
+            ],
+            [
+                'localhost:1234/2',
+                [
+                    'localhost',
+                    1234,
+                    2,
+                    false,
+                    false,
+                    [],
+                ],
+            ],
+            [
+                'redis://foobar',
+                [
+                    'foobar',
+                    \Resque\Redis::DEFAULT_PORT,
+                    false,
+                    false,
+                    false,
+                    [],
+                ],
+            ],
+            [
+                'redis://foobar/',
+                [
+                    'foobar',
+                    \Resque\Redis::DEFAULT_PORT,
+                    false,
+                    false,
+                    false,
+                    [],
+                ],
+            ],
+            [
+                'redis://foobar:1234',
+                [
+                    'foobar',
+                    1234,
+                    false,
+                    false,
+                    false,
+                    [],
+                ],
+            ],
+            [
+                'redis://foobar:1234/15',
+                [
+                    'foobar',
+                    1234,
+                    15,
+                    false,
+                    false,
+                    [],
+                ],
+            ],
+            [
+                'redis://foobar:1234/0',
+                [
+                    'foobar',
+                    1234,
+                    0,
+                    false,
+                    false,
+                    [],
+                ],
+            ],
+            [
+                'redis://user@foobar:1234',
+                [
+                    'foobar',
+                    1234,
+                    false,
+                    'user',
+                    false,
+                    [],
+                ],
+            ],
+            [
+                'redis://user@foobar:1234/15',
+                [
+                    'foobar',
+                    1234,
+                    15,
+                    'user',
+                    false,
+                    [],
+                ],
+            ],
+            [
+                'redis://user:pass@foobar:1234',
+                [
+                    'foobar',
+                    1234,
+                    false,
+                    'user',
+                    'pass',
+                    [],
+                ],
+            ],
+            [
+                'redis://user:pass@foobar:1234?x=y&a=b',
+                [
+                    'foobar',
+                    1234,
+                    false,
+                    'user',
+                    'pass',
+                    ['x' => 'y', 'a' => 'b'],
+                ],
+            ],
+            [
+                'redis://:pass@foobar:1234?x=y&a=b',
+                [
+                    'foobar',
+                    1234,
+                    false,
+                    false,
+                    'pass',
+                    ['x' => 'y', 'a' => 'b'],
+                ],
+            ],
+            [
+                'redis://user@foobar:1234?x=y&a=b',
+                [
+                    'foobar',
+                    1234,
+                    false,
+                    'user',
+                    false,
+                    ['x' => 'y', 'a' => 'b'],
+                ],
+            ],
+            [
+                'redis://foobar:1234?x=y&a=b',
+                [
+                    'foobar',
+                    1234,
+                    false,
+                    false,
+                    false,
+                    ['x' => 'y', 'a' => 'b'],
+                ],
+            ],
+            [
+                'redis://user@foobar:1234/12?x=y&a=b',
+                [
+                    'foobar',
+                    1234,
+                    12,
+                    'user',
+                    false,
+                    ['x' => 'y', 'a' => 'b'],
+                ],
+            ],
+            [
+                'tcp://user@foobar:1234/12?x=y&a=b',
+                [
+                    'foobar',
+                    1234,
+                    12,
+                    'user',
+                    false,
+                    ['x' => 'y', 'a' => 'b'],
+                ],
+            ],
+            [
                 'unix:///tmp/redis.sock',
-                null,
-                false,
-                null, null,
-                null,
-            ]],
+                [
+                    'unix:///tmp/redis.sock',
+                    null,
+                    false,
+                    null,
+                    null,
+                    null,
+                ],
+            ],
         ];
     }
 
@@ -214,7 +288,7 @@ class RedisTest extends TestCase
     public function testParsingValidDsnString($dsn, $expected)
     {
         $result = \Resque\Redis::parseDsn($dsn);
-        $this->assertEquals($expected, $result);
+        static::assertEquals($expected, $result);
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('bogusDsnStringProvider')]

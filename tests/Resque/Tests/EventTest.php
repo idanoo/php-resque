@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Resque\Test;
 
 /**
@@ -48,8 +50,8 @@ class EventTest extends TestCase
     {
         return [
             ['beforePerform', 'beforePerformEventCallback'],
-            ['afterPerform', 'afterPerformEventCallback'],
-            ['afterFork', 'afterForkEventCallback'],
+            ['afterPerform',  'afterPerformEventCallback'],
+            ['afterFork',     'afterForkEventCallback'],
         ];
     }
 
@@ -62,7 +64,7 @@ class EventTest extends TestCase
         $this->worker->perform($job);
         $this->worker->work(0);
 
-        $this->assertContains($callback, $this->callbacksHit, $event . ' callback (' . $callback . ') was not called');
+        static::assertContains($callback, $this->callbacksHit, $event . ' callback (' . $callback . ') was not called');
     }
 
     public function testBeforeForkEventCallbackFires()
@@ -71,12 +73,16 @@ class EventTest extends TestCase
         $callback = 'beforeForkEventCallback';
 
         \Resque\Event::listen($event, [$this, $callback]);
-        \Resque\Resque::enqueue('jobs', '\Resque\Test\TestJob', [
-            'somevar'
-        ]);
+        \Resque\Resque::enqueue(
+            'jobs',
+            '\Resque\Test\TestJob',
+            [
+                'somevar',
+            ],
+        );
         $this->getEventTestJob();
         $this->worker->work(0);
-        $this->assertContains($callback, $this->callbacksHit, $event . ' callback (' . $callback . ') was not called');
+        static::assertContains($callback, $this->callbacksHit, $event . ' callback (' . $callback . ') was not called');
     }
 
     public function testBeforeEnqueueEventCallbackFires()
@@ -85,10 +91,14 @@ class EventTest extends TestCase
         $callback = 'beforeEnqueueEventCallback';
 
         \Resque\Event::listen($event, [$this, $callback]);
-        \Resque\Resque::enqueue('jobs', '\Resque\Test\TestJob', [
-            'somevar'
-        ]);
-        $this->assertContains($callback, $this->callbacksHit, $event . ' callback (' . $callback . ') was not called');
+        \Resque\Resque::enqueue(
+            'jobs',
+            '\Resque\Test\TestJob',
+            [
+                'somevar',
+            ],
+        );
+        static::assertContains($callback, $this->callbacksHit, $event . ' callback (' . $callback . ') was not called');
     }
 
     public function testBeforePerformEventCanStopWork()
@@ -98,9 +108,9 @@ class EventTest extends TestCase
 
         $job = $this->getEventTestJob();
 
-        $this->assertFalse($job->perform());
-        $this->assertContains($callback, $this->callbacksHit, $callback . ' callback was not called');
-        $this->assertFalse(TestJob::$called, 'Job was still performed though \Resque\Job_DontPerform was thrown');
+        static::assertFalse($job->perform());
+        static::assertContains($callback, $this->callbacksHit, $callback . ' callback was not called');
+        static::assertFalse(TestJob::$called, 'Job was still performed though \Resque\Job_DontPerform was thrown');
     }
 
     public function testBeforeEnqueueEventStopsJobCreation()
@@ -110,9 +120,13 @@ class EventTest extends TestCase
         \Resque\Event::listen('afterEnqueue', [$this, 'afterEnqueueEventCallback']);
 
         $result = \Resque\Resque::enqueue('jobs', '\Resque\Test\TestClass');
-        $this->assertContains($callback, $this->callbacksHit, $callback . ' callback was not called');
-        $this->assertNotContains('afterEnqueueEventCallback', $this->callbacksHit, 'afterEnqueue was still called, even though it should not have been');
-        $this->assertFalse($result);
+        static::assertContains($callback, $this->callbacksHit, $callback . ' callback was not called');
+        static::assertNotContains(
+            'afterEnqueueEventCallback',
+            $this->callbacksHit,
+            'afterEnqueue was still called, even though it should not have been',
+        );
+        static::assertFalse($result);
     }
 
     public function testAfterEnqueueEventCallbackFires()
@@ -121,10 +135,14 @@ class EventTest extends TestCase
         $event = 'afterEnqueue';
 
         \Resque\Event::listen($event, [$this, $callback]);
-        \Resque\Resque::enqueue('jobs', '\Resque\Test\TestJob', [
-            'somevar'
-        ]);
-        $this->assertContains($callback, $this->callbacksHit, $event . ' callback (' . $callback . ') was not called');
+        \Resque\Resque::enqueue(
+            'jobs',
+            '\Resque\Test\TestJob',
+            [
+                'somevar',
+            ],
+        );
+        static::assertContains($callback, $this->callbacksHit, $event . ' callback (' . $callback . ') was not called');
     }
 
     public function testStopListeningRemovesListener()
@@ -139,8 +157,10 @@ class EventTest extends TestCase
         $this->worker->perform($job);
         $this->worker->work(0);
 
-        $this->assertNotContains($callback, $this->callbacksHit,
-            $event . ' callback (' . $callback . ') was called though \Resque\Event::stopListening was called'
+        static::assertNotContains(
+            $callback,
+            $this->callbacksHit,
+            $event . ' callback (' . $callback . ') was called though \Resque\Event::stopListening was called',
         );
     }
 
@@ -149,14 +169,18 @@ class EventTest extends TestCase
         \Resque\Event::listen('afterEnqueue', [$this, 'afterEnqueueEventCallback']);
         \Resque\Event::clearListeners();
 
-        \Resque\Resque::enqueue('jobs', '\Resque\Test\TestJob', [
-            'somevar'
-        ]);
+        \Resque\Resque::enqueue(
+            'jobs',
+            '\Resque\Test\TestJob',
+            [
+                'somevar',
+            ],
+        );
 
-        $this->assertNotContains(
+        static::assertNotContains(
             'afterEnqueueEventCallback',
             $this->callbacksHit,
-            'Listener still fired after \Resque\Event::clearListeners was called'
+            'Listener still fired after \Resque\Event::clearListeners was called',
         );
     }
 
@@ -186,9 +210,12 @@ class EventTest extends TestCase
     {
         $this->callbacksHit[] = __FUNCTION__;
         $this->assertEquals('\Resque\Test\TestJob', $class);
-        $this->assertEquals([
-            'somevar',
-        ], $args);
+        $this->assertEquals(
+            [
+                'somevar',
+            ],
+            $args,
+        );
     }
 
     public function beforeEnqueueEventCallback($job)

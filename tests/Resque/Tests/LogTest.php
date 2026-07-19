@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Resque\Test;
 
 /**
@@ -18,18 +20,18 @@ class LogTest extends TestCase
         $actual = $logger->interpolate('string {replace}', ['replace' => 'value']);
         $expected = 'string value';
 
-        $this->assertEquals($expected, $actual);
+        static::assertEquals($expected, $actual);
     }
 
     public function testLogInterpolateMutiple()
     {
         $logger = new \Resque\Log();
-        $actual = $logger->interpolate(
-            'string {replace1} {replace2}',
-            ['replace1' => 'value1', 'replace2' => 'value2']
-        );
+        $actual = $logger->interpolate('string {replace1} {replace2}', [
+            'replace1' => 'value1',
+            'replace2' => 'value2',
+        ]);
         $expected = 'string value1 value2';
 
-        $this->assertEquals($expected, $actual);
+        static::assertEquals($expected, $actual);
     }
 }

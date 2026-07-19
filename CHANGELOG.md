@@ -1,3 +1,10 @@
+# 3.3.0 (2026-07-19)
+- Add declare(strict_types=1) to all PHP files
+- Add mago as a dev dependency (pinned to ~1.44.0) and a mago.toml config
+- Replace PHPCS with mago lint in CI; remove squizlabs/php_codesniffer and ruleset.xml
+- Clean up all mago lint errors across the codebase
+- Split test fixtures into individual PSR-4 autoloaded files
+
 # 3.2.1 (2026-07-19)
 - Update dev dependencies to latest versions
 - Add test coverage for the failure subsystem, wildcard queue caching, job string/reserve/recreate helpers, worker stats and event listener clearing

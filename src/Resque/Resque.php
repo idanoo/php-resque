@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Resque;
 
 /**
@@ -12,7 +14,7 @@ namespace Resque;
 
 class Resque
 {
-    public const VERSION = '3.2.1';
+    public const VERSION = '3.3.0';
 
     public const DEFAULT_INTERVAL = 5;
 
@@ -299,7 +301,7 @@ class Resque
         while (!$finished) {
             $string = self::redis()->rpoplpush($originalQueue, self::redis()->getPrefix() . $tempQueue);
 
-            if (!empty($string)) {
+            if ($string) {
                 if (self::matchItem($string, $items)) {
                     self::redis()->rpop($tempQueue);
                     $counter++;
@@ -315,7 +317,7 @@ class Resque
         $finished = false;
         while (!$finished) {
             $string = self::redis()->rpoplpush($requeueQueue, self::redis()->getPrefix() . $originalQueue);
-            if (empty($string)) {
+            if (!$string) {
                 $finished = true;
             }
         }

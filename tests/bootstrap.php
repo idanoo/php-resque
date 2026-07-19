@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Resque\Test;
 
 /**
@@ -12,107 +14,24 @@ namespace Resque\Test;
 
 $loader = require __DIR__ . '/../vendor/autoload.php';
 
-# Redis configuration
-global $redisTestServer;
-$redisTestServer = getenv("REDIS_SERVER") ?: "redis";
-\Resque\Resque::setBackend($redisTestServer);
+// Redis configuration
+$envRedisServer = getenv("REDIS_SERVER");
+define('RESQUE_TEST_SERVER', $envRedisServer ? $envRedisServer : "redis");
+\Resque\Resque::setBackend(RESQUE_TEST_SERVER);
 
-# Check Redis is accessable locally
+// Check Redis is accessable locally
 try {
-    $redisTest = new \Resque\Redis($redisTestServer);
+    $redisTest = new \Resque\Redis(RESQUE_TEST_SERVER);
 } catch (\Exception $e) {
     throw new \Exception("Unable to connect to redis. Please check there is a redis-server running.");
 }
 $redisTest = null;
 
-# Cleanup forked workers cleanly
+// Cleanup forked workers cleanly
 if (function_exists('pcntl_signal')) {
     pcntl_signal(SIGINT, function() { exit; });
     pcntl_signal(SIGTERM, function() { exit; });
 }
 
-# Bootstrap it
-class TestJob
-{
-    public static $called = false;
-    public $args = false;
-    public $queue;
-    public $job;
-
-    public function perform()
-    {
-        self::$called = true;
-    }
-}
-
-class FailingJobException extends \Exception
-{
-}
-
-class FailingJob
-{
-    public static $called = false;
-    public $args = false;
-    public $queue;
-    public $job;
-
-    public function perform()
-    {
-        throw new FailingJobException('Message!');
-    }
-}
-
-class TestJobWithoutPerformMethod
-{
-}
-
-class TestJobWithSetUp
-{
-    public static $called = false;
-    public $args = false;
-    public $queue;
-    public $job;
-
-    public function setUp()
-    {
-        self::$called = true;
-    }
-
-    public function perform()
-    {
-    }
-}
-
-
-class TestJobWithTearDown
-{
-    public static $called = false;
-    public $args = false;
-    public $queue;
-    public $job;
-
-    public function perform()
-    {
-    }
-
-    public function tearDown()
-    {
-        self::$called = true;
-    }
-}
-
-class TestFailureBackend implements \Resque\Failure\ResqueFailureInterface
-{
-    public static $payload;
-    public static $exception;
-    public static $worker;
-    public static $queue;
-
-    public function __construct($payload, $exception, $worker, $queue)
-    {
-        self::$payload = $payload;
-        self::$exception = $exception;
-        self::$worker = $worker;
-        self::$queue = $queue;
-    }
-}
+// Test fixture classes (TestJob, FailingJob, TestFailureBackend, ...) live in
+// tests/Resque/Tests/ and are loaded on demand via the Resque\Test PSR-4 autoloader.

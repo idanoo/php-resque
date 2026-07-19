@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Resque\Test;
 
 /**
@@ -22,10 +24,8 @@ class TestCase extends \PHPUnit\Framework\TestCase
     public function setUp(): void
     {
         // Setup redis connection for testing.
-        global $redisTestServer;
-
-        $this->redis = new \Credis_Client($redisTestServer, '6379');
-        \Resque\Resque::setBackend($redisTestServer);
+        $this->redis = new \Credis_Client(RESQUE_TEST_SERVER, '6379');
+        \Resque\Resque::setBackend(RESQUE_TEST_SERVER);
         $this->redis->flushAll();
     }
 }

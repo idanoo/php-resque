@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Resque\Test;
 
 /**
@@ -14,8 +16,8 @@ class ResqueTest extends TestCase
 {
     public function testPushInsertsJobOntoQueue()
     {
-        $this->assertTrue(\Resque\Resque::push('jobs', ['class' => 'TestJob']));
-        $this->assertEquals(1, \Resque\Resque::size('jobs'));
+        static::assertTrue(\Resque\Resque::push('jobs', ['class' => 'TestJob']));
+        static::assertEquals(1, \Resque\Resque::size('jobs'));
     }
 
     public function testPoppedJobMatchesPushedJob()
@@ -23,24 +25,24 @@ class ResqueTest extends TestCase
         $item = ['class' => 'TestJob', 'args' => [['foo' => 'bar']]];
         \Resque\Resque::push('jobs', $item);
 
-        $this->assertEquals($item, \Resque\Resque::pop('jobs'));
+        static::assertEquals($item, \Resque\Resque::pop('jobs'));
     }
 
     public function testPopReturnsFalseOnEmptyQueue()
     {
-        $this->assertFalse(\Resque\Resque::pop('jobs'));
+        static::assertFalse(\Resque\Resque::pop('jobs'));
     }
 
     public function testSizeOfEmptyQueueIsZero()
     {
-        $this->assertEquals(0, \Resque\Resque::size('nonexistent'));
+        static::assertEquals(0, \Resque\Resque::size('nonexistent'));
     }
 
     public function testSizeReflectsNumberOfQueuedJobs()
     {
         \Resque\Resque::push('jobs', ['class' => 'TestJob']);
         \Resque\Resque::push('jobs', ['class' => 'TestJob']);
-        $this->assertEquals(2, \Resque\Resque::size('jobs'));
+        static::assertEquals(2, \Resque\Resque::size('jobs'));
     }
 
     public function testQueuesReturnsAllKnownQueues()
@@ -49,13 +51,13 @@ class ResqueTest extends TestCase
         \Resque\Resque::push('queue2', ['class' => 'TestJob']);
 
         $queues = \Resque\Resque::queues();
-        $this->assertContains('queue1', $queues);
-        $this->assertContains('queue2', $queues);
+        static::assertContains('queue1', $queues);
+        static::assertContains('queue2', $queues);
     }
 
     public function testQueuesReturnsEmptyArrayWhenNoneExist()
     {
-        $this->assertEquals([], \Resque\Resque::queues());
+        static::assertEquals([], \Resque\Resque::queues());
     }
 
     public function testRemoveQueueDeletesQueueAndReturnsCount()
@@ -63,15 +65,15 @@ class ResqueTest extends TestCase
         \Resque\Resque::push('jobs', ['class' => 'TestJob']);
         \Resque\Resque::push('jobs', ['class' => 'TestJob']);
 
-        $this->assertEquals(2, \Resque\Resque::removeQueue('jobs'));
-        $this->assertEquals(0, \Resque\Resque::size('jobs'));
-        $this->assertNotContains('jobs', \Resque\Resque::queues());
+        static::assertEquals(2, \Resque\Resque::removeQueue('jobs'));
+        static::assertEquals(0, \Resque\Resque::size('jobs'));
+        static::assertNotContains('jobs', \Resque\Resque::queues());
     }
 
     public function testGenerateJobIdReturnsHexStringOfExpectedLength()
     {
         $id = \Resque\Resque::generateJobId();
-        $this->assertMatchesRegularExpression('/^[0-9a-f]{32}$/', $id);
+        static::assertMatchesRegularExpression('/^[0-9a-f]{32}$/', $id);
     }
 
     public function testGenerateJobIdReturnsUniqueValues()
@@ -82,6 +84,6 @@ class ResqueTest extends TestCase
         }
 
         // No collisions across 1000 generated IDs.
-        $this->assertCount(1000, $ids);
+        static::assertCount(1000, $ids);
     }
 }

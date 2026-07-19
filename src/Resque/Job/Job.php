@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Resque\Job;
 
 /**
@@ -224,11 +226,11 @@ class Job
         $name = [
             'Job{' . $this->queue . '}'
         ];
-        if (!empty($this->payload['id'])) {
+        if ($this->payload['id'] ?? false) {
             $name[] = 'ID: ' . $this->payload['id'];
         }
         $name[] = $this->payload['class'];
-        if (!empty($this->payload['args'])) {
+        if ($this->payload['args'] ?? false) {
             $name[] = json_encode($this->payload['args']);
         }
         return '(' . implode(' | ', $name) . ')';

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Resque;
 
 /**
@@ -31,7 +33,7 @@ class Event
             $data = [$data];
         }
 
-        if (empty(self::$events[$event])) {
+        if ((self::$events[$event] ?? []) === []) {
             return true;
         }
 

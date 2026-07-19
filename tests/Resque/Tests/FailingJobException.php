@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Resque;
+namespace Resque\Test;
 
 /**
- * Redis exceptions
+ * Test fixture exception thrown by FailingJob.
  *
- * @package        Resque
+ * @package        Resque/Tests
  * @author         Daniel Mason <daniel@m2.nz>
  * @license        http://www.opensource.org/licenses/mit-license.php
  */
 
-class RedisException extends \Exception
+class FailingJobException extends \Exception
 {
 }

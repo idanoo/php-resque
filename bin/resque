@@ -1,6 +1,8 @@
 #!/usr/bin/env php
 <?php
 
+declare(strict_types=1);
+
 // Find and initialize Composer
 $files = [
     __DIR__ . '/../../vendor/autoload.php',

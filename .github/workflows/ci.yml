@@ -12,8 +12,8 @@ jobs:
       run: php composer.phar validate --strict
     - name: Install dependencies
       run: php composer.phar install --no-progress
-    - name: Run PHPCS Linter
-      run: php -d memory_limit=256M vendor/bin/phpcs -s --standard=ruleset.xml
+    - name: Run Mago Linter
+      run: vendor/bin/mago lint --reporting-format=github
 
   PHPTest:
     runs-on: ubuntu-latest
