@@ -100,3 +100,19 @@ class TestJobWithTearDown
         self::$called = true;
     }
 }
+
+class TestFailureBackend implements \Resque\Failure\ResqueFailureInterface
+{
+    public static $payload;
+    public static $exception;
+    public static $worker;
+    public static $queue;
+
+    public function __construct($payload, $exception, $worker, $queue)
+    {
+        self::$payload = $payload;
+        self::$exception = $exception;
+        self::$worker = $worker;
+        self::$queue = $queue;
+    }
+}

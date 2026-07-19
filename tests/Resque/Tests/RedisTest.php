@@ -24,6 +24,34 @@ class RedisTest extends TestCase
         $this->assertEquals(24, $val);
     }
 
+    public function testDefaultPrefixIsResque()
+    {
+        \Resque\Redis::prefix('resque');
+        $this->assertEquals('resque:', \Resque\Redis::getPrefix());
+    }
+
+    public function testPrefixAppendsTrailingColon()
+    {
+        \Resque\Redis::prefix('myapp');
+        $this->assertEquals('myapp:', \Resque\Redis::getPrefix());
+
+        // A prefix that already ends in a colon is left untouched.
+        \Resque\Redis::prefix('myapp:');
+        $this->assertEquals('myapp:', \Resque\Redis::getPrefix());
+
+        // Restore the default so later tests are unaffected.
+        \Resque\Redis::prefix('resque');
+    }
+
+    public function testKeyCommandsArePrefixedWithNamespace()
+    {
+        \Resque\Redis::prefix('resque');
+
+        // \Resque\Redis prefixes keys transparently; the raw Credis client does not.
+        \Resque\Resque::redis()->set('prefixed', 'value');
+        $this->assertEquals('value', $this->redis->get('resque:prefixed'));
+    }
+
     /**
      * These DNS strings are considered valid.
      *
@@ -158,6 +186,13 @@ class RedisTest extends TestCase
                 12,
                 'user', false,
                 ['x' => 'y', 'a' => 'b'],
+            ]],
+            ['unix:///tmp/redis.sock', [
+                'unix:///tmp/redis.sock',
+                null,
+                false,
+                null, null,
+                null,
             ]],
         ];
     }

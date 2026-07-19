@@ -193,4 +193,50 @@ class WorkerTest extends TestCase
 
         $this->assertEquals(2, $i);
     }
+
+    public function testWildcardQueuesAreCached()
+    {
+        \Resque\Resque::push('queue1', ['class' => '\Resque\Test\TestJob']);
+
+        $worker = new \Resque\Worker('*');
+        $worker->setLogger(new \Resque\Log());
+
+        $this->assertEquals(['queue1'], $worker->queues());
+
+        // A queue created within the cache TTL is not visible until the cache refreshes.
+        \Resque\Resque::push('queue2', ['class' => '\Resque\Test\TestJob']);
+        $this->assertEquals(['queue1'], $worker->queues());
+    }
+
+    public function testQueuesWithoutFetchDoesNotExpandWildcard()
+    {
+        $worker = new \Resque\Worker('*');
+        $worker->setLogger(new \Resque\Log());
+
+        $this->assertEquals(['*'], $worker->queues(false));
+    }
+
+    public function testJobReturnsEmptyArrayWhenIdle()
+    {
+        $worker = new \Resque\Worker('jobs');
+        $worker->setLogger(new \Resque\Log());
+        $worker->registerWorker();
+
+        $this->assertEquals([], $worker->job());
+    }
+
+    public function testGetStatReturnsWorkerScopedProcessedCount()
+    {
+        \Resque\Resque::enqueue('jobs', '\Resque\Test\TestJob');
+
+        $worker = new \Resque\Worker('jobs');
+        $worker->setLogger(new \Resque\Log());
+        $worker->registerWorker();
+
+        $job = $worker->reserve();
+        $worker->workingOn($job);
+        $worker->doneWorking();
+
+        $this->assertEquals(1, $worker->getStat('processed'));
+    }
 }

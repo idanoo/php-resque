@@ -384,6 +384,56 @@ class JobTest extends TestCase
         $instance = $job->getInstance();
         $this->assertInstanceOf('\Resque\Job\JobInterface', $instance);
     }
+
+    public function testToStringIncludesQueueClassIdAndArgs()
+    {
+        $job = new \Resque\Job\Job('jobs', [
+            'class' => '\Resque\Test\TestJob',
+            'args' => [['foo' => 'bar']],
+            'id' => 'abc123',
+        ]);
+
+        $string = (string)$job;
+        $this->assertStringContainsString('Job{jobs}', $string);
+        $this->assertStringContainsString('ID: abc123', $string);
+        $this->assertStringContainsString('\Resque\Test\TestJob', $string);
+        $this->assertStringContainsString('foo', $string);
+    }
+
+    public function testToStringIsMinimalWithoutIdOrArgs()
+    {
+        $job = new \Resque\Job\Job('jobs', ['class' => '\Resque\Test\TestJob']);
+        $this->assertEquals('(Job{jobs} | \Resque\Test\TestJob)', (string)$job);
+    }
+
+    public function testReserveBlockingReturnsNullWhenQueueEmpty()
+    {
+        $this->assertNull(\Resque\Job\Job::reserveBlocking(['jobs'], 1));
+    }
+
+    public function testReserveBlockingReturnsQueuedJob()
+    {
+        \Resque\Resque::enqueue('jobs', '\Resque\Test\TestJob');
+
+        $job = \Resque\Job\Job::reserveBlocking(['jobs'], 2);
+        $this->assertNotNull($job);
+        $this->assertEquals('jobs', $job->queue);
+        $this->assertEquals('\Resque\Test\TestJob', $job->payload['class']);
+    }
+
+    public function testRecreatedJobHasNewId()
+    {
+        \Resque\Resque::enqueue('jobs', '\Resque\Test\TestJob', ['foo' => 'bar']);
+        $job = \Resque\Job\Job::reserve('jobs');
+        $originalId = $job->payload['id'];
+
+        $newId = $job->recreate();
+        $this->assertNotEquals($originalId, $newId);
+
+        $newJob = \Resque\Job\Job::reserve('jobs');
+        $this->assertEquals($job->payload['class'], $newJob->payload['class']);
+        $this->assertEquals($job->getArguments(), $newJob->getArguments());
+    }
 }
 
 class SomeJobClass implements \Resque\Job\JobInterface

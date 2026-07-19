@@ -1,3 +1,7 @@
+# 3.2.1 (2026-07-19)
+- Update dev dependencies to latest versions
+- Add test coverage for the failure subsystem, wildcard queue caching, job string/reserve/recreate helpers, worker stats and event listener clearing
+
 # 3.2.0 (2026-07-19)
 - Generate job IDs with random_bytes() instead of md5(uniqid()) for unguessable IDs
 - Replace declare(ticks=1) with pcntl_async_signals() to remove per-statement signal overhead

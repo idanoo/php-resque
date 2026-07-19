@@ -144,6 +144,22 @@ class EventTest extends TestCase
         );
     }
 
+    public function testClearListenersRemovesAllListeners()
+    {
+        \Resque\Event::listen('afterEnqueue', [$this, 'afterEnqueueEventCallback']);
+        \Resque\Event::clearListeners();
+
+        \Resque\Resque::enqueue('jobs', '\Resque\Test\TestJob', [
+            'somevar'
+        ]);
+
+        $this->assertNotContains(
+            'afterEnqueueEventCallback',
+            $this->callbacksHit,
+            'Listener still fired after \Resque\Event::clearListeners was called'
+        );
+    }
+
     public function beforePerformEventDontPerformCallback()
     {
         $this->callbacksHit[] = __FUNCTION__;
