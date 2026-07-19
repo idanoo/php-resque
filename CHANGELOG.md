@@ -1,3 +1,9 @@
+# 3.2.0 (2026-07-19)
+- Generate job IDs with random_bytes() instead of md5(uniqid()) for unguessable IDs
+- Replace declare(ticks=1) with pcntl_async_signals() to remove per-statement signal overhead
+- Use O(1) hash lookup for Redis key-command prefixing on the hot path
+- Document Redis DSN authentication and production hardening in README
+
 # 3.1.0 (2026-05-20)
 - Reduce redis calls across php-resque
 - Reduce N+1 issues in queue lookup loop

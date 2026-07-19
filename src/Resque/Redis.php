@@ -47,55 +47,56 @@ class Redis
     public const DEFAULT_REDIS_TTL = 172800;
 
     /**
-     * @var array List of all commands in Redis that supply a key as their
-     *    first argument. Used to prefix keys with the Resque namespace.
+     * @var array<string, bool> Lookup map of all Redis commands that supply a
+     *    key as their first argument, keyed by command name for O(1) lookups.
+     *    Used to prefix keys with the Resque namespace.
      */
     private $keyCommands = [
-        'exists',
-        'del',
-        'type',
-        'keys',
-        'expire',
-        'ttl',
-        'move',
-        'set',
-        'setex',
-        'get',
-        'getset',
-        'setnx',
-        'incr',
-        'incrby',
-        'decr',
-        'decrby',
-        'rpush',
-        'lpush',
-        'llen',
-        'lrange',
-        'ltrim',
-        'lindex',
-        'lset',
-        'lrem',
-        'lpop',
-        'blpop',
-        'rpop',
-        'sadd',
-        'srem',
-        'spop',
-        'scard',
-        'sismember',
-        'smembers',
-        'srandmember',
-        'zadd',
-        'zrem',
-        'zrange',
-        'zrevrange',
-        'zrangebyscore',
-        'zcard',
-        'zscore',
-        'zremrangebyscore',
-        'sort',
-        'rename',
-        'rpoplpush'
+        'exists' => true,
+        'del' => true,
+        'type' => true,
+        'keys' => true,
+        'expire' => true,
+        'ttl' => true,
+        'move' => true,
+        'set' => true,
+        'setex' => true,
+        'get' => true,
+        'getset' => true,
+        'setnx' => true,
+        'incr' => true,
+        'incrby' => true,
+        'decr' => true,
+        'decrby' => true,
+        'rpush' => true,
+        'lpush' => true,
+        'llen' => true,
+        'lrange' => true,
+        'ltrim' => true,
+        'lindex' => true,
+        'lset' => true,
+        'lrem' => true,
+        'lpop' => true,
+        'blpop' => true,
+        'rpop' => true,
+        'sadd' => true,
+        'srem' => true,
+        'spop' => true,
+        'scard' => true,
+        'sismember' => true,
+        'smembers' => true,
+        'srandmember' => true,
+        'zadd' => true,
+        'zrem' => true,
+        'zrange' => true,
+        'zrevrange' => true,
+        'zrangebyscore' => true,
+        'zcard' => true,
+        'zscore' => true,
+        'zremrangebyscore' => true,
+        'sort' => true,
+        'rename' => true,
+        'rpoplpush' => true,
     ];
 
     /**
@@ -242,7 +243,7 @@ class Redis
      */
     public function __call($name, $args)
     {
-        if (in_array($name, $this->keyCommands)) {
+        if (isset($this->keyCommands[$name])) {
             if (is_array($args[0])) {
                 foreach ($args[0] as $i => $v) {
                     $args[0][$i] = self::$defaultNamespace . $v;

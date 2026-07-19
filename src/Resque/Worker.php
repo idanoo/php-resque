@@ -1,7 +1,5 @@
 <?php
 
-declare(ticks=1);
-
 namespace Resque;
 
 use Psr\Log\LoggerInterface;
@@ -348,6 +346,10 @@ class Worker
         if (!function_exists('pcntl_signal')) {
             return;
         }
+
+        // Use async signal handling (PHP >= 7.1) instead of declare(ticks=1),
+        // which incurs per-statement overhead on the worker's hot path.
+        pcntl_async_signals(true);
 
         pcntl_signal(SIGTERM, [$this, 'shutDownNow']);
         pcntl_signal(SIGINT, [$this, 'shutDownNow']);

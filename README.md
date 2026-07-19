@@ -254,6 +254,34 @@ use a custom prefix to separate the Resque data:
 $ PREFIX=my-app-name bin/resque
 ```
 
+### Redis Backend & Authentication ###
+
+The Redis connection is configured via the `REDIS_BACKEND` environment
+variable. It accepts either a simple `host:port` value or a DSN-style URI,
+which is the recommended format for production as it lets you supply
+authentication and connection options:
+
+```sh
+$ REDIS_BACKEND=redis://:my-secret-password@redis.internal:6379 bin/resque
+```
+
+Supported DSN format:
+
+```
+redis://user:pass@host:port/db?option1=val1&option2=val2
+```
+
+Notes:
+
+- The `user` portion is required by the URI syntax but is **not** used — only
+  the password is applied via Redis `AUTH`. Use `redis://:password@host` (empty
+  user) when you only need a password.
+- Always run Redis with authentication (`requirepass`) enabled and restrict
+  network access in production. php-resque connects without a password if none
+  is supplied, so an unprotected Redis is reachable by anything that can route
+  to it.
+- Supported schemes are `redis`, `tcp`, and `unix://` (for a socket path).
+
 ### Forking ###
 
 Similarly to the Ruby versions, supported platforms will immediately

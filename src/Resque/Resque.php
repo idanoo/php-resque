@@ -12,7 +12,7 @@ namespace Resque;
 
 class Resque
 {
-    public const VERSION = '3.1.0';
+    public const VERSION = '3.2.0';
 
     public const DEFAULT_INTERVAL = 5;
 
@@ -393,6 +393,6 @@ class Resque
      */
     public static function generateJobId()
     {
-        return md5(uniqid('', true));
+        return bin2hex(random_bytes(16));
     }
 }
