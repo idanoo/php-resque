@@ -14,7 +14,7 @@ namespace Resque;
 
 class Resque
 {
-    public const VERSION = '3.3.0';
+    public const VERSION = '3.4.0';
 
     public const DEFAULT_INTERVAL = 5;
 

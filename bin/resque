@@ -35,8 +35,10 @@ if (empty($QUEUE)) {
 /**
  * REDIS_BACKEND can have simple 'host:port' format or use a DSN-style format like this:
  * - redis://user:pass@host:port
+ * - rediss://user:pass@host:port?tls_cafile=/etc/ssl/redis-ca.pem (TLS)
  *
- * Note: the 'user' part of the DSN URI is required but is not used.
+ * Note: 'user' is only used alongside a password, as a Redis 6+ ACL `AUTH user pass`.
+ * See the README for the supported schemes and TLS options.
  */
 $REDIS_BACKEND = getenv('REDIS_BACKEND');
 
