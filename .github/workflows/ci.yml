@@ -18,14 +18,23 @@ jobs:
   PHPTest:
     runs-on: ubuntu-latest
     container: php:${{ matrix.php_version }}
+    name: PHPTest (PHP ${{ matrix.php_version }}, ${{ matrix.backend.name }})
     strategy:
+      fail-fast: false
       matrix:
         php_version: [8.3, 8.4, 8.5]
+        backend:
+        - name: redis
+          image: redis:8.4
+          health_cmd: redis-cli ping
+        - name: valkey
+          image: valkey/valkey:9.1
+          health_cmd: valkey-cli ping
     services:
       redis:
-        image: redis:8.4
+        image: ${{ matrix.backend.image }}
         options: >-
-          --health-cmd "redis-cli ping"
+          --health-cmd "${{ matrix.backend.health_cmd }}"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -35,5 +44,5 @@ jobs:
     - name: Install composer
       run: apt-get update -yq && apt-get install git wget procps unzip -y && pecl install -o -f redis && rm -rf /tmp/pear && docker-php-ext-enable redis && wget https://getcomposer.org/composer.phar && php composer.phar install --dev
 
-    - name: Run PHP ${{ matrix.php_version }} Unit Tests
+    - name: Run PHP ${{ matrix.php_version }} Unit Tests against ${{ matrix.backend.image }}
       run: php vendor/bin/phpunit --configuration phpunit.xml

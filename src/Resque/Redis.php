@@ -49,6 +49,52 @@ class Redis
     public const DEFAULT_REDIS_TTL = 172800;
 
     /**
+     * DSN schemes that connect in the clear
+     */
+    private const PLAINTEXT_SCHEMES = ['redis', 'tcp'];
+
+    /**
+     * DSN schemes that connect over TLS, mapped to the transport prefix Credis expects
+     */
+    private const TLS_SCHEMES = [
+        'rediss' => 'tls://',
+        'tls' => 'tls://',
+        'ssl' => 'ssl://',
+    ];
+
+    /**
+     * Boolean `tls_`-prefixed DSN options, passed through as PHP SSL context options
+     *
+     * @see https://www.php.net/manual/en/context.ssl.php
+     */
+    private const TLS_BOOL_OPTIONS = [
+        'verify_peer',
+        'verify_peer_name',
+        'allow_self_signed',
+        'disable_compression',
+    ];
+
+    /**
+     * String `tls_`-prefixed DSN options, passed through as PHP SSL context options
+     *
+     * @see https://www.php.net/manual/en/context.ssl.php
+     */
+    private const TLS_STRING_OPTIONS = [
+        'cafile',
+        'capath',
+        'local_cert',
+        'local_pk',
+        'passphrase',
+        'peer_name',
+        'ciphers',
+    ];
+
+    /**
+     * Values treated as `false` for a boolean DSN option
+     */
+    private const FALSEY_OPTION_VALUES = ['0', 'false', 'off', 'no', ''];
+
+    /**
      * @var array<string, bool> Lookup map of all Redis commands that supply a
      *    key as their first argument, keyed by command name for O(1) lookups.
      *    Used to prefix keys with the Resque namespace.
@@ -131,17 +177,28 @@ class Redis
             if (is_object($client)) {
                 $this->driver = $client;
             } else {
-                /** @noinspection PhpUnusedLocalVariableInspection */
                 list($host, $port, $dsnDatabase, $user, $password, $options) = self::parseDsn($server);
-                // $user is not used, only $password
+                $options = is_array($options) ? $options : [];
                 $timeout = isset($options['timeout']) ? intval($options['timeout']) : null;
                 $persistent = isset($options['persistent']) ? $options['persistent'] : '';
                 $maxRetries = isset($options['max_connect_retries']) ? $options['max_connect_retries'] : 0;
-                $this->driver = new \Credis_Client($host, $port, $timeout, $persistent);
+                $tlsOptions = self::parseTlsOptions($options);
+                // Credentials are handed to the driver rather than AUTH'd here so that they
+                // are replayed if the connection drops and Credis reconnects. A username is
+                // only meaningful alongside a password (Redis 6+ ACL `AUTH user pass`).
+                $password = ($password === false || $password === null || $password === '') ? null : $password;
+                $user = ($password === null || $user === false || $user === null || $user === '') ? null : $user;
+                $this->driver = new \Credis_Client(
+                    $host,
+                    $port,
+                    $timeout,
+                    $persistent,
+                    0,
+                    $password,
+                    $user,
+                    $tlsOptions === [] ? null : $tlsOptions
+                );
                 $this->driver->setMaxConnectRetries($maxRetries);
-                if ($password) {
-                    $this->driver->auth($password);
-                }
                 // If we have found a database in our DSN, use it instead of the `$database`
                 // value passed into the constructor.
                 if ($dsnDatabase !== false) {
@@ -162,9 +219,16 @@ class Redis
      * - host:port
      * - redis://user:pass@host:port/db?option1=val1&option2=val2
      * - tcp://user:pass@host:port/db?option1=val1&option2=val2
+     * - rediss://user:pass@host:port/db?option1=val1&option2=val2 (TLS)
+     * - tls://user:pass@host:port/db (TLS, as does ssl://)
      * - unix:///path/to/redis.sock
      *
-     * Note: the 'user' part of the DSN is not used.
+     * The 'user' part is only used when a password is also supplied, in which case it is
+     * sent as a Redis 6+ ACL `AUTH user pass`. Both are percent-decoded, so credentials
+     * containing reserved characters such as `@`, `:` or `/` must be percent-encoded.
+     *
+     * For a TLS scheme the returned host keeps its transport prefix (e.g. `tls://redis.internal`)
+     * as that is how the underlying Credis driver is told to negotiate an encrypted connection.
      *
      * @param string $dsn A DSN string
      *
@@ -189,10 +253,22 @@ class Redis
         }
         $parts = parse_url($dsn);
 
-        // Check the URI scheme
-        $validSchemes = ['redis', 'tcp'];
-        if (isset($parts['scheme']) && !in_array($parts['scheme'], $validSchemes)) {
-            throw new \InvalidArgumentException("Invalid DSN. Supported schemes are " . implode(', ', $validSchemes));
+        // Check the URI scheme, and work out whether the connection should be encrypted
+        $scheme = isset($parts['scheme']) ? strtolower($parts['scheme']) : 'redis';
+        $hostPrefix = '';
+        if (!in_array($scheme, self::PLAINTEXT_SCHEMES, strict: true)) {
+            if (!isset(self::TLS_SCHEMES[$scheme])) {
+                $validSchemes = array_merge(
+                    self::PLAINTEXT_SCHEMES,
+                    array_keys(self::TLS_SCHEMES),
+                    ['unix']
+                );
+                throw new \InvalidArgumentException(
+                    "Invalid DSN. Supported schemes are " . implode(', ', $validSchemes)
+                );
+            }
+
+            $hostPrefix = self::TLS_SCHEMES[$scheme];
         }
 
         // Allow simple 'hostname' format, which `parse_url` treats as a path, not host.
@@ -211,9 +287,10 @@ class Redis
             $database = intval(preg_replace('/[^0-9]/', '', $parts['path']));
         }
 
-        // Extract any 'user' and 'pass' values
-        $user = isset($parts['user']) ? $parts['user'] : false;
-        $pass = isset($parts['pass']) ? $parts['pass'] : false;
+        // Extract any 'user' and 'pass' values, undoing any percent-encoding needed to
+        // carry reserved characters through the URI
+        $user = isset($parts['user']) ? rawurldecode($parts['user']) : false;
+        $pass = isset($parts['pass']) ? rawurldecode($parts['pass']) : false;
 
         // Convert the query string into an associative array
         $options = [];
@@ -223,13 +300,56 @@ class Redis
         }
 
         return [
-            $parts['host'],
+            $hostPrefix . $parts['host'],
             $port,
             $database,
             $user,
             $pass,
             $options,
         ];
+    }
+
+    /**
+     * Pull the TLS context options out of the parsed DSN query options.
+     *
+     * Any `tls_`-prefixed option is treated as a PHP SSL context option of the same name
+     * with the prefix removed, e.g. `?tls_cafile=/etc/ssl/redis-ca.pem&tls_verify_peer=0`.
+     * Unrecognised `tls_` options are rejected rather than silently ignored, so that a
+     * typo cannot quietly leave verification in a state you did not ask for.
+     *
+     * @param array $options The options array returned by {@see self::parseDsn()}
+     *
+     * @return array PHP SSL context options, empty when the DSN sets none
+     *
+     * @see https://www.php.net/manual/en/context.ssl.php
+     */
+    public static function parseTlsOptions(array $options): array
+    {
+        $tlsOptions = [];
+        foreach ($options as $key => $value) {
+            $key = (string)$key;
+            if (!str_starts_with($key, 'tls_')) {
+                continue;
+            }
+
+            $name = substr($key, 4);
+            if (in_array($name, self::TLS_BOOL_OPTIONS, strict: true)) {
+                $tlsOptions[$name] = !in_array(
+                    strtolower((string)$value),
+                    self::FALSEY_OPTION_VALUES,
+                    strict: true
+                );
+                continue;
+            }
+
+            if (!in_array($name, self::TLS_STRING_OPTIONS, strict: true)) {
+                throw new \InvalidArgumentException("Invalid DSN. Unknown TLS option '" . $key . "'");
+            }
+
+            $tlsOptions[$name] = (string)$value;
+        }
+
+        return $tlsOptions;
     }
 
     /**

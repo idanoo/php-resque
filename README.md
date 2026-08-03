@@ -273,14 +273,62 @@ redis://user:pass@host:port/db?option1=val1&option2=val2
 
 Notes:
 
-- The `user` portion is required by the URI syntax but is **not** used — only
-  the password is applied via Redis `AUTH`. Use `redis://:password@host` (empty
-  user) when you only need a password.
-- Always run Redis with authentication (`requirepass`) enabled and restrict
-  network access in production. php-resque connects without a password if none
-  is supplied, so an unprotected Redis is reachable by anything that can route
-  to it.
-- Supported schemes are `redis`, `tcp`, and `unix://` (for a socket path).
+- Supply just a password (`redis://:password@host`) to authenticate as the
+  default user with `AUTH password` — this is what `requirepass` expects.
+- Supply both parts (`redis://user:password@host`) to authenticate a Redis 6+
+  ACL user with `AUTH user password`. A username on its own is ignored.
+- The username and password are percent-decoded, so credentials containing
+  reserved characters must be encoded: `p@ss:word` becomes `p%40ss%3Aword`.
+- Credentials are held by the driver and replayed automatically if the
+  connection drops and is re-established.
+- Always run Redis with authentication enabled and restrict network access in
+  production. php-resque connects without a password if none is supplied, so an
+  unprotected Redis is reachable by anything that can route to it.
+- Supported schemes are `redis`, `tcp`, `rediss`, `tls`, `ssl`, and `unix://`
+  (for a socket path).
+
+#### TLS ####
+
+Use the `rediss://` scheme (or `tls://` / `ssl://`) to connect over an
+encrypted channel — required by managed services such as AWS ElastiCache with
+in-transit encryption enabled:
+
+```sh
+$ REDIS_BACKEND=rediss://resque:my-secret-password@redis.internal:6379 bin/resque
+```
+
+The certificate chain is verified against the system CA bundle by default. TLS
+behaviour is tuned with `tls_`-prefixed DSN options, each of which maps to the
+[PHP SSL context option](https://www.php.net/manual/en/context.ssl.php) of the
+same name with the prefix removed:
+
+| Option | Purpose |
+| --- | --- |
+| `tls_cafile`, `tls_capath` | Verify the server against a private CA |
+| `tls_local_cert`, `tls_local_pk`, `tls_passphrase` | Present a client certificate (mutual TLS) |
+| `tls_peer_name` | Expected certificate name, when it differs from the connection host |
+| `tls_verify_peer`, `tls_verify_peer_name`, `tls_allow_self_signed` | Relax verification (development only) |
+| `tls_ciphers`, `tls_disable_compression` | Cipher and compression control |
+
+```sh
+# Verify against a private CA
+$ REDIS_BACKEND='rediss://:pass@redis.internal?tls_cafile=/etc/ssl/redis-ca.pem' bin/resque
+
+# Self-signed certificate — do not use outside development
+$ REDIS_BACKEND='rediss://:pass@redis.internal?tls_verify_peer=0&tls_verify_peer_name=0&tls_allow_self_signed=1' bin/resque
+```
+
+Boolean options accept `0`, `false`, `off`, `no` or an empty value as false and
+anything else as true. An unrecognised `tls_` option is rejected rather than
+ignored, so a typo cannot silently leave verification disabled.
+
+Note on ACL users: when the `redis` PHP extension is not installed (or is older
+than 5.3.0) php-resque falls back to Credis' pure-PHP client. On one of that
+client's reconnect paths — a command issued after the server has closed an idle
+connection — it re-sends `AUTH` with the password only, dropping the username.
+Against an ACL user that authenticates as the default user instead, or fails
+outright. If you use `user:password` credentials, install the `redis` extension
+(5.3.0 or newer) so the extension's own connection handling is used.
 
 ### Forking ###
 

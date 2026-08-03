@@ -1,3 +1,11 @@
+# 3.4.0 (2026-08-03)
+- Add TLS support to the Redis DSN via the `rediss://`, `tls://` and `ssl://` schemes
+- Add `tls_`-prefixed DSN options (`tls_cafile`, `tls_verify_peer`, `tls_local_cert`, ...) mapping to PHP SSL context options; unknown `tls_` options are rejected
+- Add Redis 6+ ACL support: a DSN username is now sent as `AUTH user pass` when a password is also supplied
+- Percent-decode the DSN username and password so credentials may contain reserved characters
+- Hand credentials to the driver instead of calling `AUTH` at construction, so they are replayed on reconnect (a bad password now surfaces on first command rather than at construction)
+- Run CI against Valkey 9.1 as well as Redis 8.4
+
 # 3.3.0 (2026-07-19)
 - Add declare(strict_types=1) to all PHP files
 - Add mago as a dev dependency (pinned to ~1.44.0) and a mago.toml config
