@@ -5,7 +5,7 @@
 - Retry a Redis command once on a fresh connection when the connection dropped (failover, idle reap, node restart) instead of killing the worker; transactions, `WATCH` and subscribe commands are never replayed
 - Log and retry instead of exiting when a worker cannot reach Redis at all, so a blip no longer leaves a queue permanently unserviced
 - Force the Redis connection closed before forking. Credis skips an unforced close while the `persistent` DSN option is set, so the socket was surviving the fork and being shared by parent and child
-- Update the dev toolchain to PHPUnit 13 and drop the deprecated `ReflectionProperty::setAccessible()` calls from the tests
+- Update the dev toolchain to PHPUnit 13.3, clearing the deprecation notices the 12.5 runner emitted for the reflection-based driver assertions
 
 # 3.4.0 (2026-08-03)
 - Add TLS support to the Redis DSN via the `rediss://`, `tls://` and `ssl://` schemes

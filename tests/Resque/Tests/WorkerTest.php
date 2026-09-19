@@ -203,6 +203,12 @@ class WorkerTest extends TestCase
 
     public function testForkPerJobDefaultsToRunningJobInAChildProcess()
     {
+        // Without pcntl, Resque::fork() returns false and every job runs inline, so
+        // there is no child process for this test to tell apart from the worker.
+        if (!function_exists('pcntl_fork')) {
+            static::markTestSkipped('pcntl is required to fork a child per job');
+        }
+
         \Resque\Test\TestJob::$called = false;
 
         $worker = new \Resque\Worker('jobs');

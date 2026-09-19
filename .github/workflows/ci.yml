@@ -42,7 +42,7 @@ jobs:
     - uses: actions/checkout@v6
 
     - name: Install composer
-      run: apt-get update -yq && apt-get install git wget procps unzip -y && pecl install -o -f redis && rm -rf /tmp/pear && docker-php-ext-enable redis && wget https://getcomposer.org/composer.phar && php composer.phar install --dev
+      run: apt-get update -yq && apt-get install git wget procps unzip -y && pecl install -o -f redis && rm -rf /tmp/pear && docker-php-ext-enable redis && docker-php-ext-install pcntl && wget https://getcomposer.org/composer.phar && php composer.phar install --dev
 
     - name: Run PHP ${{ matrix.php_version }} Unit Tests against ${{ matrix.backend.image }}
       run: php vendor/bin/phpunit --configuration phpunit.xml
