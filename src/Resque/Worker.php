@@ -72,6 +72,12 @@ class Worker
     private $child = null;
 
     /**
+     * @var bool Fork a child process per job. Off keeps one Redis connection across
+     *           jobs, but a job that exits dirty takes the worker with it.
+     */
+    private $forkPerJob = true;
+
+    /**
      * Instantiate a new worker, given a list of queues that it should be working
      * on. The list of queues should be supplied in the priority that they should
      * be checked for jobs (first come, first served)
@@ -106,6 +112,19 @@ class Worker
     public function setId($workerId): void
     {
         $this->id = $workerId;
+    }
+
+    /**
+     * Toggle forking a child process per job.
+     *
+     * With forking off the job runs inline, so the worker's Redis connection is
+     * reused instead of being torn down and re-established twice per job. The cost
+     * is that a fatal error in a job kills the worker rather than being caught as a
+     * dirty exit, and USR1/TERM can no longer interrupt a running job.
+     */
+    public function setForkPerJob(bool $forkPerJob): void
+    {
+        $this->forkPerJob = $forkPerJob;
     }
 
     /**
@@ -147,7 +166,28 @@ class Worker
                     $this->updateProcLine('Waiting for ' . implode(',', $this->queues) . ' with interval ' . $interval);
                 }
 
-                $job = $this->reserve($blocking, $interval);
+                try {
+                    $job = $this->reserve($blocking, $interval);
+                } catch (RedisException $e) {
+                    // An interval of 0 means "make one pass and stop", so let it surface.
+                    if ($interval == 0) {
+                        throw $e;
+                    }
+
+                    // The driver already retried once on a fresh connection, so Redis is
+                    // down or unreachable rather than having dropped a single socket.
+                    // Sleep and retry instead of dying: a dead worker is not restarted by
+                    // the parent process and its queues just stop being serviced.
+                    $this->logger->log(
+                        \Psr\Log\LogLevel::ALERT,
+                        'Redis is unreachable, retrying in {interval}s: {error}',
+                        ['interval' => $interval, 'error' => $e->getMessage()],
+                    );
+                    $this->updateProcLine('Waiting for Redis to come back');
+                    usleep((int)$interval * 1000000);
+
+                    continue;
+                }
             }
 
             if (!$job) {
@@ -180,7 +220,7 @@ class Worker
             Event::trigger('beforeFork', $job);
             $this->workingOn($job);
 
-            $this->child = Resque::fork();
+            $this->child = $this->forkPerJob ? Resque::fork() : false;
 
             // Forked and we're the child. Run the job.
             if ($this->child === 0 || $this->child === false) {

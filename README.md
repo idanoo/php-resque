@@ -42,7 +42,7 @@ On top of the original fork (chrisboulton/php-resque) I have added:
 
 ## Requirements ##
 
-* PHP 8.1+
+* PHP 8.4+
 * phpredis
 * Redis 2.2+
 
@@ -287,6 +287,31 @@ Notes:
 - Supported schemes are `redis`, `tcp`, `rediss`, `tls`, `ssl`, and `unix://`
   (for a socket path).
 
+#### Dropped connections ####
+
+A command that fails because the connection died — a managed-Redis failover, an
+idle connection reaped by the server's `timeout`, a node restart — is retried
+once on a fresh connection, with credentials and the selected database replayed.
+Without this a single failover of, say, an ElastiCache or Valkey primary takes
+every worker down with `Error communicating with Redis: read error on
+connection`.
+
+The retry means a write whose reply was lost may be applied twice, which is the
+same at-least-once guarantee Resque already gives a job that exits dirty.
+Commands where a replay would be wrong are never retried: anything inside a
+`MULTI`/pipeline, `WATCH`/`UNWATCH`, and the subscribe commands. Use the
+`max_connect_retries` DSN option to also retry the initial dial.
+
+#### Persistent connections ####
+
+The `persistent` DSN option keeps the socket open instead of reconnecting, but it
+interacts badly with per-job forking: Credis skips an unforced `close()` while
+`persistent` is set, so before 3.5.0 the socket survived the pre-fork disconnect
+and parent and child both wrote to it. Interleaved commands on one socket
+desynchronise the protocol and surface as `read error on connection` — usually on
+the parent's next `BLPOP`. php-resque now forces the close, but `FORK_PER_JOB=0`
+avoids the fork entirely and is the better pairing for `persistent`.
+
 #### TLS ####
 
 Use the `rediss://` scheme (or `tls://` / `ssl://`) to connect over an
@@ -339,6 +364,35 @@ the job finishes.
 The difference with php-resque is that if a forked child does not
 exit nicely (PHP error or such), php-resque will automatically fail
 the job.
+
+Set `FORK_PER_JOB=0` to run jobs inline in the worker instead:
+
+    $ QUEUE=file_serve FORK_PER_JOB=0 bin/resque
+
+`0`, `false`, `no`, `off` and an empty value all disable forking; anything
+else (or leaving the variable unset) keeps the default fork-per-job
+behaviour.
+
+Forking costs two Redis connections per job — `Resque::fork()` drops the
+worker's connection before forking, then the child and the parent each
+open a new one. When connection setup is expensive (TLS handshake plus
+`AUTH`, as on an encrypted ElastiCache/Valkey endpoint) and job throughput
+is high, that connection churn can dominate server CPU. Running inline
+keeps one connection alive for the life of the worker.
+
+What you give up:
+
+* A job that exits dirty (fatal error, OOM, `exit()`) takes the worker
+  down with it instead of being failed as a `DirtyExitException`. Run
+  workers under a supervisor that restarts them.
+* `USR1` and `TERM` can no longer interrupt a job that is already running.
+  `QUIT` still works, and `TERM` still stops the worker once the current
+  job finishes.
+* Jobs share process state — memory is not reclaimed between jobs, and
+  anything a job mutates in a static or global is visible to the next one.
+
+`beforeFork` and `afterFork` still fire in both modes, so listeners that
+re-establish per-job resources keep working.
 
 ### Signals ###
 
@@ -480,7 +534,7 @@ The following is a default config that can be modified to suit.
 directory=/var/www  # Project root
 command=php vendor/bin/resque
 numprocs=2  # Change this value for more threads
-environment=LOGLEVEL=NOTICE,QUEUE='*',BLOCKING=1,COUNT=1,APP_INCLUDE='includes/autoload.php',REDIS_BACKEND=127.0.0.1,REDIS_BACKEND_DB=0
+environment=LOGLEVEL=NOTICE,QUEUE='*',BLOCKING=1,COUNT=1,FORK_PER_JOB=1,APP_INCLUDE='includes/autoload.php',REDIS_BACKEND=127.0.0.1,REDIS_BACKEND_DB=0
 redirect_stderr=true  # Output stderr to logfile
 stdout_logfile=/var/log/resque.log
 autostart=true

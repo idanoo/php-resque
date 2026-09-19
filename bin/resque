@@ -100,6 +100,16 @@ if (!empty($COUNT) && $COUNT > 1) {
     $count = $COUNT;
 }
 
+/**
+ * FORK_PER_JOB=0 runs jobs inline in the worker instead of forking a child for
+ * each one, so the Redis connection is reused across jobs. Worth it when
+ * connection setup is expensive (TLS, AUTH) and job throughput is high; see the
+ * Forking section of the README for what you give up.
+ */
+$FORK_PER_JOB = getenv('FORK_PER_JOB');
+$forkPerJob = $FORK_PER_JOB === false
+    || !in_array(strtolower($FORK_PER_JOB), ['0', 'false', 'no', 'off', ''], true);
+
 // Determines redis key prefix
 $PREFIX = getenv('PREFIX');
 if (!empty($PREFIX)) {
@@ -118,6 +128,7 @@ if ($count > 1) {
             $queues = explode(',', $QUEUE);
             $worker = new \Resque\Worker($queues);
             $worker->setLogger($logger);
+            $worker->setForkPerJob($forkPerJob);
             $logger->log(\Psr\Log\LogLevel::NOTICE, 'Starting worker {worker}', ['worker' => $worker]);
             $worker->work($interval, $BLOCKING);
             break;
@@ -128,6 +139,7 @@ if ($count > 1) {
     $queues = explode(',', $QUEUE);
     $worker = new \Resque\Worker($queues);
     $worker->setLogger($logger);
+    $worker->setForkPerJob($forkPerJob);
 
     $PIDFILE = getenv('PIDFILE');
     if ($PIDFILE) {

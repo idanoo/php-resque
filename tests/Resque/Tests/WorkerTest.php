@@ -38,6 +38,18 @@ class WorkerTest extends TestCase
         static::assertEquals(1, \Resque\Stat::get('processed'));
     }
 
+    public function testWorkerSurvivesAnUnreachableRedisInsteadOfDying()
+    {
+        $worker = new FlakyRedisWorker(['jobs']);
+        $worker->setLogger(new \Resque\Log());
+        $worker->registerWorker();
+
+        // A RedisException out of reserve() used to be fatal, taking the worker with it.
+        $worker->work(1, false);
+
+        static::assertEquals(2, $worker->reserveCalls);
+    }
+
     public function testWorkerCanWorkOverMultipleQueues()
     {
         $worker = new \Resque\Worker([
@@ -171,6 +183,36 @@ class WorkerTest extends TestCase
         $worker->unregisterWorker();
 
         static::assertEquals(1, \Resque\Stat::get('failed'));
+    }
+
+    public function testForkPerJobDisabledRunsJobInsideTheWorkerProcess()
+    {
+        \Resque\Test\TestJob::$called = false;
+
+        $worker = new \Resque\Worker('jobs');
+        $worker->setLogger(new \Resque\Log());
+        $worker->setForkPerJob(false);
+
+        \Resque\Resque::enqueue('jobs', '\Resque\Test\TestJob');
+        $worker->work(0);
+
+        // Side effects are only visible here if the job ran inline rather than in a child.
+        static::assertTrue(\Resque\Test\TestJob::$called);
+        static::assertEquals(1, \Resque\Stat::get('processed'));
+    }
+
+    public function testForkPerJobDefaultsToRunningJobInAChildProcess()
+    {
+        \Resque\Test\TestJob::$called = false;
+
+        $worker = new \Resque\Worker('jobs');
+        $worker->setLogger(new \Resque\Log());
+
+        \Resque\Resque::enqueue('jobs', '\Resque\Test\TestJob');
+        $worker->work(0);
+
+        static::assertFalse(\Resque\Test\TestJob::$called);
+        static::assertEquals(1, \Resque\Stat::get('processed'));
     }
 
     public function testBlockingListPop()

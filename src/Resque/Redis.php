@@ -29,6 +29,12 @@ class Redis
     private static $defaultNamespace = 'resque:';
 
     /**
+     * @var bool Inside a MULTI/pipeline, where the queued commands are lost with the
+     *           connection and a single-command retry would silently drop them.
+     */
+    private $inTransaction = false;
+
+    /**
      * A default host to connect to
      */
     public const DEFAULT_HOST = 'localhost';
@@ -93,6 +99,33 @@ class Redis
      * Values treated as `false` for a boolean DSN option
      */
     private const FALSEY_OPTION_VALUES = ['0', 'false', 'off', 'no', ''];
+
+    /**
+     * Lower-cased error message fragments that mean the connection dropped mid-command
+     */
+    private const DISCONNECT_ERRORS = [
+        'read error on connection',
+        'connection lost',
+        'connection closed',
+        'went away',
+        'broken pipe',
+        'socket error on read socket',
+        'connection not established',
+    ];
+
+    /**
+     * Commands that must never be replayed on a new connection, keyed for O(1) lookups
+     */
+    private const NON_RETRYABLE_COMMANDS = [
+        'exec' => true,
+        'discard' => true,
+        'watch' => true,
+        'unwatch' => true,
+        'subscribe' => true,
+        'psubscribe' => true,
+        'unsubscribe' => true,
+        'punsubscribe' => true,
+    ];
 
     /**
      * @var array<string, bool> Lookup map of all Redis commands that supply a
@@ -356,6 +389,12 @@ class Redis
      * Magic method to handle all function requests and prefix key based
      * operations with the {self::$defaultNamespace} key prefix.
      *
+     * A command that fails because the connection dropped (a managed-Redis failover,
+     * an idle-timeout reap, a node restart) is retried once on a fresh connection.
+     * Retrying means a write whose reply was lost may be applied twice, which matches
+     * the at-least-once delivery Resque already has; commands where a replay would be
+     * wrong (transactions, WATCH, subscriptions) are never retried.
+     *
      * @param string $name The name of the method called.
      * @param array $args Array of supplied arguments to the method.
      *
@@ -374,11 +413,89 @@ class Redis
                 $args[0] = self::$defaultNamespace . $args[0];
             }
         }
+
+        $command = strtolower($name);
+        $retryable = !$this->inTransaction && !isset(self::NON_RETRYABLE_COMMANDS[$command]);
+        if ($command === 'multi' || $command === 'pipeline') {
+            $this->inTransaction = true;
+        } elseif ($command === 'exec' || $command === 'discard') {
+            $this->inTransaction = false;
+        }
+
         try {
             return $this->driver->__call($name, $args);
         } catch (\Exception $e) {
-            throw new RedisException('Error communicating with Redis: ' . $e->getMessage(), 0, $e);
+            if (!$retryable || !$this->isDisconnect($e)) {
+                throw new RedisException('Error communicating with Redis: ' . $e->getMessage(), 0, $e);
+            }
+
+            try {
+                $this->reconnect();
+
+                return $this->driver->__call($name, $args);
+            } catch (\Exception $retryError) {
+                $this->inTransaction = false;
+                throw new RedisException(
+                    'Error communicating with Redis: ' . $retryError->getMessage(),
+                    0,
+                    $retryError
+                );
+            }
         }
+    }
+
+    /**
+     * Drop the connection, forcing a persistent one closed too.
+     *
+     * Credis' own close() is a no-op while the `persistent` DSN option is set, so
+     * without the force a socket survives \Resque\Resque::fork() and is then shared
+     * by parent and child — interleaved commands on one socket desynchronise the
+     * protocol and surface as a read error on whichever process reads next.
+     */
+    public function close(): void
+    {
+        $this->inTransaction = false;
+        if (method_exists($this->driver, 'close')) {
+            $this->driver->close(true);
+        }
+    }
+
+    /**
+     * Whether the exception means the connection died rather than the command failing.
+     *
+     * Credis flags a dropped phpredis connection with CODE_DISCONNECTED, but a
+     * standalone-mode or mid-write failure only shows up in the message.
+     */
+    private function isDisconnect(\Exception $e): bool
+    {
+        if ($e instanceof \CredisException && $e->getCode() === \CredisException::CODE_DISCONNECTED) {
+            return true;
+        }
+
+        $message = strtolower($e->getMessage());
+        foreach (self::DISCONNECT_ERRORS as $fragment) {
+            if (str_contains($message, $fragment)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Tear down the dead socket and dial again, replaying AUTH and SELECT.
+     *
+     * @throws \Exception if the driver cannot reconnect, or was supplied by the caller
+     *                   and has no connect()
+     */
+    private function reconnect(): void
+    {
+        if (!method_exists($this->driver, 'close') || !method_exists($this->driver, 'connect')) {
+            throw new \RuntimeException('Redis driver does not support reconnecting');
+        }
+
+        $this->driver->close(true);
+        $this->driver->connect();
     }
 
     /**

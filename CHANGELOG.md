@@ -1,3 +1,12 @@
+# 3.5.0 (2026-09-19)
+- **Breaking**: require PHP 8.4 or newer. PHP 8.3 is no longer supported or tested
+- Add `FORK_PER_JOB` to run jobs inline in the worker instead of forking a child per job, avoiding two Redis connections (and two TLS handshakes) per job
+- Add `Worker::setForkPerJob()` to toggle the same behaviour programmatically
+- Retry a Redis command once on a fresh connection when the connection dropped (failover, idle reap, node restart) instead of killing the worker; transactions, `WATCH` and subscribe commands are never replayed
+- Log and retry instead of exiting when a worker cannot reach Redis at all, so a blip no longer leaves a queue permanently unserviced
+- Force the Redis connection closed before forking. Credis skips an unforced close while the `persistent` DSN option is set, so the socket was surviving the fork and being shared by parent and child
+- Update the dev toolchain to PHPUnit 13 and drop the deprecated `ReflectionProperty::setAccessible()` calls from the tests
+
 # 3.4.0 (2026-08-03)
 - Add TLS support to the Redis DSN via the `rediss://`, `tls://` and `ssl://` schemes
 - Add `tls_`-prefixed DSN options (`tls_cafile`, `tls_verify_peer`, `tls_local_cert`, ...) mapping to PHP SSL context options; unknown `tls_` options are rejected

@@ -493,6 +493,86 @@ class RedisTest extends TestCase
         static::assertNull(self::driverProperty($driver, 'authUsername'));
     }
 
+    public function testCloseForcesAPersistentConnectionShut()
+    {
+        $driver = new FlakyRedisDriver(0, new \CredisException('unused'));
+        $redis = new \Resque\Redis('redis://redis.internal', null, $driver);
+
+        // Credis skips an unforced close while `persistent` is set, which would leave
+        // the socket open across a fork for parent and child to fight over.
+        $redis->close();
+
+        static::assertEquals([true], $driver->closes);
+    }
+
+    public function testDroppedConnectionIsRetriedOnceOnAFreshConnection()
+    {
+        $driver = new FlakyRedisDriver(1, new \CredisException(
+            'read error on connection to tcp://redis.internal:6379'
+        ));
+        $redis = new \Resque\Redis('redis://redis.internal', null, $driver);
+
+        static::assertEquals('ok', $redis->get('testKey'));
+        static::assertEquals(1, $driver->reconnects);
+        static::assertEquals(['get', 'get'], $driver->calls);
+    }
+
+    public function testDroppedConnectionIsOnlyRetriedOnce()
+    {
+        $driver = new FlakyRedisDriver(2, new \CredisException('read error on connection'));
+        $redis = new \Resque\Redis('redis://redis.internal', null, $driver);
+
+        $this->expectException(\Resque\RedisException::class);
+
+        try {
+            $redis->get('testKey');
+        } finally {
+            static::assertEquals(1, $driver->reconnects);
+            static::assertEquals(['get', 'get'], $driver->calls);
+        }
+    }
+
+    public function testCommandErrorsAreNotRetried()
+    {
+        $driver = new FlakyRedisDriver(1, new \CredisException('WRONGTYPE Operation against a key'));
+        $redis = new \Resque\Redis('redis://redis.internal', null, $driver);
+
+        $this->expectException(\Resque\RedisException::class);
+
+        try {
+            $redis->get('testKey');
+        } finally {
+            static::assertEquals(0, $driver->reconnects);
+            static::assertEquals(['get'], $driver->calls);
+        }
+    }
+
+    public function testQueuedTransactionCommandsAreNotReplayedAfterADisconnect()
+    {
+        $driver = new FlakyRedisDriver(0, new \CredisException('read error on connection'));
+        $redis = new \Resque\Redis('redis://redis.internal', null, $driver);
+        $redis->multi();
+
+        // Inside a MULTI the queued commands die with the connection, so replaying a
+        // single command on a new one would silently drop the rest of the transaction.
+        $reflection = new \ReflectionProperty(\Resque\Redis::class, 'inTransaction');
+        static::assertTrue($reflection->getValue($redis));
+
+        $driver->calls = [];
+        $failing = new FlakyRedisDriver(1, new \CredisException('read error on connection'));
+        $driverProperty = new \ReflectionProperty(\Resque\Redis::class, 'driver');
+        $driverProperty->setValue($redis, $failing);
+
+        $this->expectException(\Resque\RedisException::class);
+
+        try {
+            $redis->rpush('queue:jobs', 'payload');
+        } finally {
+            static::assertEquals(0, $failing->reconnects);
+            static::assertEquals(['rpush'], $failing->calls);
+        }
+    }
+
     /**
      * Build a \Resque\Redis from a DSN and return its underlying driver.
      *
@@ -506,7 +586,6 @@ class RedisTest extends TestCase
     private static function driverForDsn($dsn)
     {
         $property = new \ReflectionProperty(\Resque\Redis::class, 'driver');
-        $property->setAccessible(true);
 
         return $property->getValue(new \Resque\Redis($dsn));
     }
@@ -522,7 +601,6 @@ class RedisTest extends TestCase
     private static function driverProperty($driver, $name)
     {
         $property = new \ReflectionProperty(\Credis_Client::class, $name);
-        $property->setAccessible(true);
 
         return $property->getValue($driver);
     }

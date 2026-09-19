@@ -14,7 +14,7 @@ namespace Resque;
 
 class Resque
 {
-    public const VERSION = '3.4.0';
+    public const VERSION = '3.5.0';
 
     public const DEFAULT_INTERVAL = 5;
 
@@ -88,8 +88,12 @@ class Resque
             return false;
         }
 
-        // Close the connection to Redis before forking.
-        // This is a workaround for issues phpredis has.
+        // Close the connection to Redis before forking, so parent and child do not
+        // end up sharing one socket. This is a workaround for issues phpredis has.
+        if (is_object(self::$redis) && method_exists(self::$redis, 'close')) {
+            self::$redis->close();
+        }
+
         self::$redis = null;
 
         $pid = pcntl_fork();
