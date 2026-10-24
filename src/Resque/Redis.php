@@ -212,9 +212,9 @@ class Redis
             } else {
                 list($host, $port, $dsnDatabase, $user, $password, $options) = self::parseDsn($server);
                 $options = is_array($options) ? $options : [];
-                $timeout = isset($options['timeout']) ? intval($options['timeout']) : null;
-                $persistent = isset($options['persistent']) ? $options['persistent'] : '';
-                $maxRetries = isset($options['max_connect_retries']) ? $options['max_connect_retries'] : 0;
+                $timeout = ($options['timeout'] ?? null) !== null ? intval($options['timeout']) : null;
+                $persistent = $options['persistent'] ?? '';
+                $maxRetries = $options['max_connect_retries'] ?? 0;
                 $tlsOptions = self::parseTlsOptions($options);
                 // Credentials are handed to the driver rather than AUTH'd here so that they
                 // are replayed if the connection drops and Credis reconnects. A username is
@@ -287,10 +287,11 @@ class Redis
         $parts = parse_url($dsn);
 
         // Check the URI scheme, and work out whether the connection should be encrypted
-        $scheme = isset($parts['scheme']) ? strtolower($parts['scheme']) : 'redis';
+        $scheme = strtolower($parts['scheme'] ?? 'redis');
         $hostPrefix = '';
         if (!in_array($scheme, self::PLAINTEXT_SCHEMES, strict: true)) {
-            if (!isset(self::TLS_SCHEMES[$scheme])) {
+            $hostPrefix = self::TLS_SCHEMES[$scheme] ?? null;
+            if ($hostPrefix === null) {
                 $validSchemes = array_merge(
                     self::PLAINTEXT_SCHEMES,
                     array_keys(self::TLS_SCHEMES),
@@ -300,36 +301,36 @@ class Redis
                     "Invalid DSN. Supported schemes are " . implode(', ', $validSchemes)
                 );
             }
-
-            $hostPrefix = self::TLS_SCHEMES[$scheme];
         }
 
         // Allow simple 'hostname' format, which `parse_url` treats as a path, not host.
-        if (!isset($parts['host']) && isset($parts['path'])) {
+        if (($parts['host'] ?? null) === null && ($parts['path'] ?? null) !== null) {
             $parts['host'] = $parts['path'];
             unset($parts['path']);
         }
 
         // Extract the port number as an integer
-        $port = isset($parts['port']) ? intval($parts['port']) : self::DEFAULT_PORT;
+        $port = intval($parts['port'] ?? self::DEFAULT_PORT);
 
         // Get the database from the 'path' part of the URI
         $database = false;
-        if (isset($parts['path'])) {
+        $path = $parts['path'] ?? null;
+        if ($path !== null) {
             // Strip non-digit chars from path
-            $database = intval(preg_replace('/[^0-9]/', replacement: '', subject: $parts['path']));
+            $database = intval(preg_replace('/[^0-9]/', replacement: '', subject: $path));
         }
 
         // Extract any 'user' and 'pass' values, undoing any percent-encoding needed to
         // carry reserved characters through the URI
-        $user = isset($parts['user']) ? rawurldecode($parts['user']) : false;
-        $pass = isset($parts['pass']) ? rawurldecode($parts['pass']) : false;
+        $user = ($parts['user'] ?? null) !== null ? rawurldecode($parts['user']) : false;
+        $pass = ($parts['pass'] ?? null) !== null ? rawurldecode($parts['pass']) : false;
 
         // Convert the query string into an associative array
         $options = [];
-        if (isset($parts['query'])) {
+        $query = $parts['query'] ?? null;
+        if ($query !== null) {
             // Parse the query string into an array
-            parse_str($parts['query'], $options);
+            parse_str($query, $options);
         }
 
         return [
@@ -404,7 +405,7 @@ class Redis
      */
     public function __call($name, $args)
     {
-        if (isset($this->keyCommands[$name])) {
+        if (array_key_exists($name, $this->keyCommands)) {
             if (is_array($args[0])) {
                 foreach ($args[0] as $i => $v) {
                     $args[0][$i] = self::$defaultNamespace . $v;
@@ -415,7 +416,7 @@ class Redis
         }
 
         $command = strtolower($name);
-        $retryable = !$this->inTransaction && !isset(self::NON_RETRYABLE_COMMANDS[$command]);
+        $retryable = !$this->inTransaction && !array_key_exists($command, self::NON_RETRYABLE_COMMANDS);
         if ($command === 'multi' || $command === 'pipeline') {
             $this->inTransaction = true;
         } elseif ($command === 'exec' || $command === 'discard') {
