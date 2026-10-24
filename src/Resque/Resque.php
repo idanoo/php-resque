@@ -146,7 +146,7 @@ class Resque
             return false;
         }
 
-        return json_decode($item, true);
+        return json_decode($item, associative: true);
     }
 
     /**
@@ -210,7 +210,7 @@ class Resque
 
         return [
             'queue' => $queue,
-            'payload' => json_decode($item[1], true)
+            'payload' => json_decode($item[1], associative: true)
         ];
     }
 
@@ -347,15 +347,15 @@ class Resque
      */
     private static function matchItem($string, $items)
     {
-        $decoded = json_decode($string, true);
+        $decoded = json_decode($string, associative: true);
 
         foreach ($items as $key => $val) {
-            # class name only  ex: item[0] = ['class']
+            // class name only  ex: item[0] = ['class']
             if (is_numeric($key)) {
                 if ($decoded['class'] == $val) {
                     return true;
                 }
-                # class name with args , example: item[0] = ['class' => {'foo' => 1, 'bar' => 2}]
+                // class name with args , example: item[0] = ['class' => {'foo' => 1, 'bar' => 2}]
             } elseif (is_array($val)) {
                 $decodedArgs = (array)$decoded['args'][0];
                 if (
@@ -365,7 +365,7 @@ class Resque
                 ) {
                     return true;
                 }
-                # class name with ID, example: item[0] = ['class' => 'id']
+                // class name with ID, example: item[0] = ['class' => 'id']
             } else {
                 if ($decoded['class'] == $key && $decoded['id'] == $val) {
                     return true;

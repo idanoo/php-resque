@@ -21,8 +21,8 @@
 		"colinmollenhour/credis": "^1.17.1"
 	},
 	"require-dev": {
-		"phpunit/phpunit": "^13.3",
-		"carthage-software/mago": "~1.44.0"
+		"phpunit/phpunit": "^13.4",
+		"carthage-software/mago": "~1.58.0"
 	},
 	"bin": [
 		"bin/resque"

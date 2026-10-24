@@ -80,7 +80,7 @@ class Event
             return true;
         }
 
-        $key = array_search($callback, self::$events[$event]);
+        $key = array_search($callback, self::$events[$event], strict: true);
         if ($key !== false) {
             unset(self::$events[$event][$key]);
         }

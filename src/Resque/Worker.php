@@ -184,7 +184,7 @@ class Worker
                         ['interval' => $interval, 'error' => $e->getMessage()],
                     );
                     $this->updateProcLine('Waiting for Redis to come back');
-                    usleep((int)$interval * 1000000);
+                    usleep((int)$interval * 1_000_000);
 
                     continue;
                 }
@@ -210,7 +210,7 @@ class Worker
                         $this->updateProcLine('Waiting for ' . implode(',', $this->queues));
                     }
 
-                    usleep($interval * 1000000);
+                    usleep($interval * 1_000_000);
                 }
 
                 continue;
@@ -327,7 +327,7 @@ class Worker
      */
     public function queues(bool $fetch = true): array
     {
-        if (!in_array('*', $this->queues) || $fetch == false) {
+        if (!in_array('*', $this->queues, strict: true) || $fetch == false) {
             return $this->queues;
         }
 
@@ -569,7 +569,7 @@ class Worker
     {
         $job = Resque::redis()->get('worker:' . $this);
 
-        return $job ? json_decode($job, true) : [];
+        return $job ? json_decode($job, associative: true) : [];
     }
 
     /**
