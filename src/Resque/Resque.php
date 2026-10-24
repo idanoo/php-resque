@@ -122,10 +122,9 @@ class Resque
 
         // Pipelined so MULTI/SADD/RPUSH/EXEC go out in one round trip, not four.
         $result = self::redis()->pipelined(static function (Redis $redis) use ($queue, $encodedItem): void {
-            $redis->multi();
             $redis->sadd('queues', $queue);
             $redis->rpush('queue:' . $queue, $encodedItem);
-        });
+        }, transaction: true);
 
         // Return true if the job was pushed to the queue, otherwise false
         return !(!is_array($result) || count($result) < 2 || (int)$result[1] < 1);

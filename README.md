@@ -298,8 +298,10 @@ connection`.
 
 The retry means a write whose reply was lost may be applied twice, which is the
 same at-least-once guarantee Resque already gives a job that exits dirty.
-Commands where a replay would be wrong are never retried: anything inside a
-`MULTI`/pipeline, `WATCH`/`UNWATCH`, and the subscribe commands. Use the
+A plain `Redis::pipelined()` batch is replayed whole, under the same guarantee.
+Commands where a replay would be wrong are never retried: `EXEC` and anything
+else inside a `MULTI` (including `pipelined(..., transaction: true)`, which
+`Resque::push()` uses), `WATCH`/`UNWATCH`, and the subscribe commands. Use the
 `max_connect_retries` DSN option to also retry the initial dial.
 
 #### Persistent connections ####

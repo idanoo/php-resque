@@ -227,17 +227,23 @@ class Redis
                 // A database found in the DSN wins over the `$database` constructor argument.
                 // Credis only sends SELECT on connect for a non-zero db, saving a round trip
                 // per connection (one per job when forking).
+                $selectedDb = (int)($dsnDatabase !== false ? $dsnDatabase : ($database ?? 0));
                 $this->driver = new \Credis_Client(
                     $host,
                     $port,
                     $timeout,
                     $persistent,
-                    (int)($dsnDatabase !== false ? $dsnDatabase : ($database ?? 0)),
+                    $selectedDb,
                     $password,
                     $user,
                     $tlsOptions === [] ? null : $tlsOptions
                 );
                 $this->driver->setMaxConnectRetries($maxRetries);
+                // A reused persistent socket keeps whatever db its last owner selected, which
+                // Credis would not reset for db 0. This connects eagerly.
+                if ($selectedDb === 0 && $this->driver->getPersistence() !== '') {
+                    $this->driver->select(0);
+                }
             }
         } catch (\Exception $e) {
             throw new RedisException('Error communicating with Redis: ' . $e->getMessage(), 0, $e);
@@ -446,8 +452,10 @@ class Redis
      * Send the commands queued by $queue in one pipelined round trip.
      *
      * Queued commands are only written at EXEC, so the per-command retry in __call()
-     * never sees a dropped connection; instead the whole batch is replayed once on a
-     * fresh one (same at-least-once trade-off). Call multi() inside $queue for atomicity.
+     * never sees a dropped connection. A plain pipeline is instead replayed once on a
+     * fresh connection (same at-least-once trade-off) by calling $queue again, so $queue
+     * must only queue commands. A $transaction is wrapped in MULTI/EXEC and never
+     * replayed, as the lost reply may belong to an EXEC the server already applied.
      *
      * @param callable(self): void $queue
      *
@@ -455,14 +463,14 @@ class Redis
      *
      * @throws \Resque\RedisException
      */
-    public function pipelined(callable $queue): mixed
+    public function pipelined(callable $queue, bool $transaction = false): mixed
     {
         try {
-            return $this->runPipeline($queue);
+            return $this->runPipeline($queue, $transaction);
         } catch (RedisException $e) {
             $cause = $e->getPrevious();
             $this->inTransaction = false;
-            if (!$cause instanceof \Exception || !$this->isDisconnect($cause)) {
+            if ($transaction || !$cause instanceof \Exception || !$this->isDisconnect($cause)) {
                 throw $e;
             }
 
@@ -477,26 +485,55 @@ class Redis
             }
 
             try {
-                return $this->runPipeline($queue);
+                return $this->runPipeline($queue, $transaction);
             } finally {
                 $this->inTransaction = false;
             }
         }
     }
 
-    private function runPipeline(callable $queue): mixed
+    private function runPipeline(callable $queue, bool $transaction): mixed
     {
-        $this->__call('pipeline', []);
+        if ($transaction && $this->driver instanceof \Credis_Client && extension_loaded('redis')) {
+            // Under phpredis Credis drops a multi() queued after pipeline(), so open the
+            // MULTI on its own. Still atomic, just slower, if Credis was forced standalone.
+            $this->__call('multi', []);
+        } else {
+            $this->__call('pipeline', []);
+            if ($transaction) {
+                $this->__call('multi', []);
+            }
+        }
+
         try {
             $queue($this);
         } catch (\Throwable $e) {
-            // Left open, the pipeline would swallow every later command. Closing resets it
-            // portably; standalone Credis sends a DISCARD the server rejects outside MULTI.
-            $this->close();
+            $this->abortPipeline();
             throw $e;
         }
 
         return $this->__call('exec', []);
+    }
+
+    /**
+     * Reset a pipeline whose callback threw; left open it would swallow every later command.
+     */
+    private function abortPipeline(): void
+    {
+        // Closing resets it portably; standalone Credis sends a DISCARD the server rejects
+        // outside MULTI.
+        if (method_exists($this->driver, 'close')) {
+            $this->close();
+
+            return;
+        }
+
+        $this->inTransaction = false;
+        // @mago-expect lint:no-empty-catch-clause A plain pipeline has no MULTI to discard; the driver has still reset itself.
+        try {
+            $this->driver->__call('discard', []);
+        } catch (\Throwable) {
+        }
     }
 
     /**

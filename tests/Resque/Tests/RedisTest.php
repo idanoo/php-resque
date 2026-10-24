@@ -518,6 +518,23 @@ class RedisTest extends TestCase
         static::assertFalse($this->redis->get('resque:testDbKey'));
     }
 
+    public function testPersistentSocketLeftOnAnotherDbIsReset()
+    {
+        $dsn = 'redis://' . RESQUE_TEST_SERVER . ':6379?persistent=resque-db-test';
+        $other = new \Resque\Redis($dsn, 2);
+        $other->set('persistentDbKey', 'in-db-2');
+
+        $redis = new \Resque\Redis($dsn, 0);
+        $redis->set('persistentDbKey', 'in-db-0');
+
+        static::assertEquals('in-db-0', $this->redis->get('resque:persistentDbKey'));
+        $this->redis->select(2);
+        static::assertEquals('in-db-2', $this->redis->get('resque:persistentDbKey'));
+        $this->redis->flushDb();
+        $this->redis->select(0);
+        $redis->close();
+    }
+
     public function testCloseForcesAPersistentConnectionShut()
     {
         $driver = new FlakyRedisDriver(0, new \CredisException('unused'));
@@ -663,6 +680,66 @@ class RedisTest extends TestCase
         static::assertTrue(\Resque\Resque::redis()->set('afterDiscard', 'v'));
         static::assertFalse($this->redis->get('resque:pipeDiscarded'));
         static::assertEquals('v', $this->redis->get('resque:afterDiscard'));
+    }
+
+    public function testTransactionIsWrappedInMultiAndNeverReplayed()
+    {
+        $driver = new FailingExecDriver(1, new \CredisException('read error on connection'));
+        $redis = new \Resque\Redis('redis://redis.internal', null, $driver);
+
+        $this->expectException(\Resque\RedisException::class);
+
+        try {
+            $redis->pipelined(static function (\Resque\Redis $r): void {
+                $r->sadd('queues', 'jobs');
+            }, transaction: true);
+        } finally {
+            static::assertEquals(0, $driver->reconnects);
+            static::assertEquals(['pipeline', 'multi', 'sadd', 'exec'], $driver->calls);
+        }
+    }
+
+    public function testTransactionIsAtomicAgainstARealServer()
+    {
+        $result = \Resque\Resque::redis()->pipelined(static function (\Resque\Redis $r): void {
+            $r->set('txKey', 'v');
+            $r->lpush('txKey', 'x');
+            $r->set('txAfter', 'v');
+        }, transaction: true);
+
+        // EXEC still runs every queued command; WRONGTYPE comes back as false, not an abort.
+        static::assertEquals([true, false, true], $result);
+        static::assertEquals('v', $this->redis->get('resque:txAfter'));
+    }
+
+    public function testPipelineIsDiscardedOnADriverWithoutClose()
+    {
+        $driver = new class {
+            /** @var array<int, string> */
+            public $calls = [];
+
+            public function __call($name, $args)
+            {
+                $this->calls[] = $name;
+
+                return 'ok';
+            }
+        };
+        $redis = new \Resque\Redis('redis://redis.internal', null, $driver);
+
+        try {
+            $redis->pipelined(static function (\Resque\Redis $r): void {
+                $r->get('testKey');
+                throw new \LogicException('boom');
+            });
+            static::fail('Expected the callback exception to propagate');
+        } catch (\LogicException $e) {
+            static::assertEquals('boom', $e->getMessage());
+        }
+
+        static::assertEquals(['pipeline', 'get', 'discard'], $driver->calls);
+        $inTransaction = new \ReflectionProperty(\Resque\Redis::class, 'inTransaction');
+        static::assertFalse($inTransaction->getValue($redis));
     }
 
     public function testPipelinedPrefixesKeysAgainstARealServer()
