@@ -128,11 +128,12 @@ class Job
      */
     public function getArguments()
     {
-        if (!isset($this->payload['args'])) {
+        $args = $this->payload['args'] ?? null;
+        if ($args === null) {
             return [];
         }
 
-        return $this->payload['args'][0];
+        return $args[0];
     }
 
     /**
@@ -142,7 +143,7 @@ class Job
      */
     public function getInstance()
     {
-        if (isset($this->instance) && !is_null($this->instance)) {
+        if ($this->instance !== null) {
             return $this->instance;
         }
 

@@ -58,10 +58,6 @@ class Event
      */
     public static function listen($event, $callback)
     {
-        if (!isset(self::$events[$event])) {
-            self::$events[$event] = [];
-        }
-
         self::$events[$event][] = $callback;
         return true;
     }
@@ -76,11 +72,12 @@ class Event
      */
     public static function stopListening($event, $callback)
     {
-        if (!isset(self::$events[$event])) {
+        $listeners = self::$events[$event] ?? null;
+        if ($listeners === null) {
             return true;
         }
 
-        $key = array_search($callback, self::$events[$event], strict: true);
+        $key = array_search($callback, $listeners, strict: true);
         if ($key !== false) {
             unset(self::$events[$event][$key]);
         }
