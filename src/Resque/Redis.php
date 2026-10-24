@@ -209,6 +209,9 @@ class Redis
         try {
             if (is_object($client)) {
                 $this->driver = $client;
+                if ($database !== null) {
+                    $this->driver->select($database);
+                }
             } else {
                 list($host, $port, $dsnDatabase, $user, $password, $options) = self::parseDsn($server);
                 $options = is_array($options) ? $options : [];
@@ -221,25 +224,20 @@ class Redis
                 // only meaningful alongside a password (Redis 6+ ACL `AUTH user pass`).
                 $password = ($password === false || $password === null || $password === '') ? null : $password;
                 $user = ($password === null || $user === false || $user === null || $user === '') ? null : $user;
+                // A database found in the DSN wins over the `$database` constructor argument.
+                // Credis only sends SELECT on connect for a non-zero db, saving a round trip
+                // per connection (one per job when forking).
                 $this->driver = new \Credis_Client(
                     $host,
                     $port,
                     $timeout,
                     $persistent,
-                    0,
+                    (int)($dsnDatabase !== false ? $dsnDatabase : ($database ?? 0)),
                     $password,
                     $user,
                     $tlsOptions === [] ? null : $tlsOptions
                 );
                 $this->driver->setMaxConnectRetries($maxRetries);
-                // If we have found a database in our DSN, use it instead of the `$database`
-                // value passed into the constructor.
-                if ($dsnDatabase !== false) {
-                    $database = $dsnDatabase;
-                }
-            }
-            if ($database !== null) {
-                $this->driver->select($database);
             }
         } catch (\Exception $e) {
             throw new RedisException('Error communicating with Redis: ' . $e->getMessage(), 0, $e);
@@ -442,6 +440,63 @@ class Redis
                 );
             }
         }
+    }
+
+    /**
+     * Send the commands queued by $queue in one pipelined round trip.
+     *
+     * Queued commands are only written at EXEC, so the per-command retry in __call()
+     * never sees a dropped connection; instead the whole batch is replayed once on a
+     * fresh one (same at-least-once trade-off). Call multi() inside $queue for atomicity.
+     *
+     * @param callable(self): void $queue
+     *
+     * @return mixed The EXEC reply
+     *
+     * @throws \Resque\RedisException
+     */
+    public function pipelined(callable $queue): mixed
+    {
+        try {
+            return $this->runPipeline($queue);
+        } catch (RedisException $e) {
+            $cause = $e->getPrevious();
+            $this->inTransaction = false;
+            if (!$cause instanceof \Exception || !$this->isDisconnect($cause)) {
+                throw $e;
+            }
+
+            try {
+                $this->reconnect();
+            } catch (\Exception $reconnectError) {
+                throw new RedisException(
+                    'Error communicating with Redis: ' . $reconnectError->getMessage(),
+                    0,
+                    $reconnectError
+                );
+            }
+
+            try {
+                return $this->runPipeline($queue);
+            } finally {
+                $this->inTransaction = false;
+            }
+        }
+    }
+
+    private function runPipeline(callable $queue): mixed
+    {
+        $this->__call('pipeline', []);
+        try {
+            $queue($this);
+        } catch (\Throwable $e) {
+            // Left open, the pipeline would swallow every later command. Closing resets it
+            // portably; standalone Credis sends a DISCARD the server rejects outside MULTI.
+            $this->close();
+            throw $e;
+        }
+
+        return $this->__call('exec', []);
     }
 
     /**

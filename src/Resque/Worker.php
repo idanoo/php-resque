@@ -545,9 +545,8 @@ class Worker
     public function doneWorking(): void
     {
         $this->currentJob = null;
-        Stat::incr('processed');
-        Stat::incr('processed:' . (string)$this);
-        Resque::redis()->del('worker:' . (string)$this);
+        $id = (string)$this;
+        Stat::incrPipelined(['processed', 'processed:' . $id], ['worker:' . $id]);
     }
 
     /**

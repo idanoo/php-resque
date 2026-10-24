@@ -493,6 +493,31 @@ class RedisTest extends TestCase
         static::assertNull(self::driverProperty($driver, 'authUsername'));
     }
 
+    public function testDatabaseIsHandedToTheDriverWithoutConnecting()
+    {
+        $property = new \ReflectionProperty(\Resque\Redis::class, 'driver');
+
+        $fromDsn = $property->getValue(new \Resque\Redis('redis://redis.internal/3', 5));
+        static::assertEquals(3, self::driverProperty($fromDsn, 'selectedDb'));
+        static::assertFalse(self::driverProperty($fromDsn, 'connected'));
+
+        $fromArgument = $property->getValue(new \Resque\Redis('redis://redis.internal', 2));
+        static::assertEquals(2, self::driverProperty($fromArgument, 'selectedDb'));
+        static::assertFalse(self::driverProperty($fromArgument, 'connected'));
+    }
+
+    public function testNonZeroDatabaseIsSelectedOnConnect()
+    {
+        \Resque\Resque::setBackend('redis://' . RESQUE_TEST_SERVER . ':6379', 1);
+        \Resque\Resque::redis()->set('testDbKey', 'in-db-1');
+
+        $this->redis->select(1);
+        static::assertEquals('in-db-1', $this->redis->get('resque:testDbKey'));
+        $this->redis->flushDb();
+        $this->redis->select(0);
+        static::assertFalse($this->redis->get('resque:testDbKey'));
+    }
+
     public function testCloseForcesAPersistentConnectionShut()
     {
         $driver = new FlakyRedisDriver(0, new \CredisException('unused'));
@@ -571,6 +596,84 @@ class RedisTest extends TestCase
             static::assertEquals(0, $failing->reconnects);
             static::assertEquals(['rpush'], $failing->calls);
         }
+    }
+
+    public function testPipelineIsReplayedOnceOnAFreshConnection()
+    {
+        $driver = new FailingExecDriver(1, new \CredisException('read error on connection'));
+        $redis = new \Resque\Redis('redis://redis.internal', null, $driver);
+
+        $result = $redis->pipelined(static function (\Resque\Redis $r): void {
+            $r->get('testKey');
+        });
+
+        static::assertEquals('ok', $result);
+        static::assertEquals(1, $driver->reconnects);
+        static::assertEquals(['pipeline', 'get', 'exec', 'pipeline', 'get', 'exec'], $driver->calls);
+        $inTransaction = new \ReflectionProperty(\Resque\Redis::class, 'inTransaction');
+        static::assertFalse($inTransaction->getValue($redis));
+    }
+
+    public function testPipelineIsOnlyReplayedOnce()
+    {
+        $driver = new FailingExecDriver(2, new \CredisException('read error on connection'));
+        $redis = new \Resque\Redis('redis://redis.internal', null, $driver);
+
+        $this->expectException(\Resque\RedisException::class);
+
+        try {
+            $redis->pipelined(static function (\Resque\Redis $r): void {
+                $r->get('testKey');
+            });
+        } finally {
+            static::assertEquals(1, $driver->reconnects);
+            static::assertEquals(['pipeline', 'get', 'exec', 'pipeline', 'get', 'exec'], $driver->calls);
+        }
+    }
+
+    public function testPipelineCommandErrorsAreNotReplayed()
+    {
+        $driver = new FailingExecDriver(1, new \CredisException('WRONGTYPE Operation against a key'));
+        $redis = new \Resque\Redis('redis://redis.internal', null, $driver);
+
+        $this->expectException(\Resque\RedisException::class);
+
+        try {
+            $redis->pipelined(static function (\Resque\Redis $r): void {
+                $r->get('testKey');
+            });
+        } finally {
+            static::assertEquals(0, $driver->reconnects);
+            static::assertEquals(['pipeline', 'get', 'exec'], $driver->calls);
+        }
+    }
+
+    public function testPipelineIsDiscardedWhenTheCallbackThrows()
+    {
+        try {
+            \Resque\Resque::redis()->pipelined(static function (\Resque\Redis $r): void {
+                $r->set('pipeDiscarded', 'v');
+                throw new \LogicException('boom');
+            });
+            static::fail('Expected the callback exception to propagate');
+        } catch (\LogicException $e) {
+            static::assertEquals('boom', $e->getMessage());
+        }
+
+        static::assertTrue(\Resque\Resque::redis()->set('afterDiscard', 'v'));
+        static::assertFalse($this->redis->get('resque:pipeDiscarded'));
+        static::assertEquals('v', $this->redis->get('resque:afterDiscard'));
+    }
+
+    public function testPipelinedPrefixesKeysAgainstARealServer()
+    {
+        $result = \Resque\Resque::redis()->pipelined(static function (\Resque\Redis $r): void {
+            $r->set('pipeKey', 'v');
+            $r->get('pipeKey');
+        });
+
+        static::assertEquals([true, 'v'], $result);
+        static::assertEquals('v', $this->redis->get('resque:pipeKey'));
     }
 
     /**

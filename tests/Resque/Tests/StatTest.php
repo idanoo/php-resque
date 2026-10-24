@@ -106,6 +106,31 @@ class StatTest extends TestCase
         \Resque\Stat::setDisableStats(false);
     }
 
+    public function testIncrPipelinedIncrementsWithTtlAndDeletesKeys()
+    {
+        \Resque\Stat::incr('test_pipe_existing', 5);
+        $this->redis->set('resque:test_pipe_delete', 'x');
+
+        \Resque\Stat::incrPipelined(['test_pipe_new', 'test_pipe_existing'], ['test_pipe_delete']);
+        \Resque\Stat::incrPipelined(['test_pipe_new']);
+
+        static::assertEquals(2, $this->redis->get('resque:stat:test_pipe_new'));
+        static::assertEquals(6, $this->redis->get('resque:stat:test_pipe_existing'));
+        static::assertGreaterThan(0, $this->redis->ttl('resque:stat:test_pipe_new'));
+        static::assertEquals(0, $this->redis->exists('resque:test_pipe_delete'));
+    }
+
+    public function testIncrPipelinedStillDeletesWhenDisabled()
+    {
+        $this->redis->set('resque:test_pipe_delete_disabled', 'x');
+        \Resque\Stat::setDisableStats(true);
+        \Resque\Stat::incrPipelined(['test_pipe_disabled'], ['test_pipe_delete_disabled']);
+        \Resque\Stat::setDisableStats(false);
+
+        static::assertEquals(0, $this->redis->exists('resque:stat:test_pipe_disabled'));
+        static::assertEquals(0, $this->redis->exists('resque:test_pipe_delete_disabled'));
+    }
+
     public function testClearStatNoOpWhenDisabled()
     {
         \Resque\Stat::incr('test_clear_disabled', 50);
