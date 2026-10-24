@@ -212,47 +212,54 @@ class Worker
                 continue;
             }
 
-            $this->logger->log(\Psr\Log\LogLevel::NOTICE, 'Starting work on {job}', ['job' => $job]);
-            Event::trigger('beforeFork', $job);
-            $this->workingOn($job);
-
-            $this->child = $this->forkPerJob ? Resque::fork() : false;
-
-            // Forked and we're the child. Run the job.
-            if ($this->child === 0 || $this->child === false) {
-                $status = 'Processing ' . $job->queue
-                    . ' (' . ($job->payload['class'] ?? '') . ') since '
-                    . date('Y-m-d H:i:s');
-                $this->updateProcLine($status);
-                $this->logger->log(\Psr\Log\LogLevel::INFO, $status);
-                /** @noinspection PhpParamsInspection */
-                $this->perform($job);
-                if ($this->child === 0) {
-                    exit(0);
-                }
-            }
-
-            if ($this->child > 0) {
-                // Parent process, sit and wait
-                $status = 'Forked ' . $this->child . ' at ' . date('Y-m-d H:i:s');
-                $this->updateProcLine($status);
-                $this->logger->log(\Psr\Log\LogLevel::INFO, $status);
-
-                // Wait until the child process finishes before continuing
-                pcntl_wait($status);
-                $exitStatus = pcntl_wexitstatus($status);
-                if ($exitStatus !== 0) {
-                    $job->fail(new \Resque\Job\DirtyExitException(
-                        'Job exited with exit code ' . $exitStatus
-                    ));
-                }
-            }
-
+            $this->process($job);
             $this->child = null;
             $this->doneWorking();
         }
 
         $this->unregisterWorker();
+    }
+
+    /**
+     * Run a reserved job, in a forked child unless forking per job is off.
+     */
+    private function process(\Resque\Job\Job $job): void
+    {
+        $this->logger->log(\Psr\Log\LogLevel::NOTICE, 'Starting work on {job}', ['job' => $job]);
+        Event::trigger('beforeFork', $job);
+        $this->workingOn($job);
+
+        $this->child = $this->forkPerJob ? Resque::fork() : false;
+
+        // Forked and we're the child. Run the job.
+        if ($this->child === 0 || $this->child === false) {
+            $status = 'Processing ' . $job->queue
+                . ' (' . ($job->payload['class'] ?? '') . ') since '
+                . date('Y-m-d H:i:s');
+            $this->updateProcLine($status);
+            $this->logger->log(\Psr\Log\LogLevel::INFO, $status);
+            /** @noinspection PhpParamsInspection */
+            $this->perform($job);
+            if ($this->child === 0) {
+                exit(0);
+            }
+        }
+
+        if ($this->child > 0) {
+            // Parent process, sit and wait
+            $status = 'Forked ' . $this->child . ' at ' . date('Y-m-d H:i:s');
+            $this->updateProcLine($status);
+            $this->logger->log(\Psr\Log\LogLevel::INFO, $status);
+
+            // Wait until the child process finishes before continuing
+            pcntl_wait($status);
+            $exitStatus = pcntl_wexitstatus($status);
+            if ($exitStatus !== 0) {
+                $job->fail(new \Resque\Job\DirtyExitException(
+                    'Job exited with exit code ' . $exitStatus
+                ));
+            }
+        }
     }
 
     /**

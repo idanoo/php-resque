@@ -14,3 +14,6 @@ enabled = false
 
 [linter.rules.too-many-properties]
 enabled = false
+
+[linter.rules.no-boolean-flag-parameter]
+enabled = false
