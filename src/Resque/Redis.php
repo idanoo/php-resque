@@ -52,7 +52,7 @@ class Redis
     /**
      * Default Redis TTL (2 days)
      */
-    public const DEFAULT_REDIS_TTL = 172800;
+    public const DEFAULT_REDIS_TTL = 172_800;
 
     /**
      * DSN schemes that connect in the clear
@@ -274,7 +274,7 @@ class Redis
             // Use a sensible default for an empty DNS string
             $dsn = 'redis://' . self::DEFAULT_HOST;
         }
-        if (substr($dsn, 0, 7) === 'unix://') {
+        if (str_starts_with($dsn, 'unix://')) {
             return [
                 $dsn,
                 null,
@@ -317,7 +317,7 @@ class Redis
         $database = false;
         if (isset($parts['path'])) {
             // Strip non-digit chars from path
-            $database = intval(preg_replace('/[^0-9]/', '', $parts['path']));
+            $database = intval(preg_replace('/[^0-9]/', replacement: '', subject: $parts['path']));
         }
 
         // Extract any 'user' and 'pass' values, undoing any percent-encoding needed to
@@ -365,7 +365,7 @@ class Redis
                 continue;
             }
 
-            $name = substr($key, 4);
+            $name = substr($key, offset: 4);
             if (in_array($name, self::TLS_BOOL_OPTIONS, strict: true)) {
                 $tlsOptions[$name] = !in_array(
                     strtolower((string)$value),

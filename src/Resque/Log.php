@@ -47,7 +47,7 @@ class Log extends \Psr\Log\AbstractLogger
          *  Only log things with a higher level than the current log level.
          *  e.g If set as 'alert' will only alert for 'emergency' and 'alert' logs.
          */
-        if (array_search($level, $logLevels) <= array_search($this->logLevel, $logLevels)) {
+        if (array_search($level, $logLevels, strict: true) <= array_search($this->logLevel, $logLevels, strict: true)) {
             fwrite(
                 STDOUT,
                 '[' . $level . '][' . date('Y-m-d H:i:s') . '] ' .
