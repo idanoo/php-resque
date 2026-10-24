@@ -1,3 +1,9 @@
+# 3.5.1 (2026-10-24)
+- Update `carthage-software/mago` to 1.58 and lint against PHP 8.5
+- Update the dev toolchain to PHPUnit 13.4
+- `Event::stopListening()` now matches the callback strictly, so a closure must be the same instance that was registered
+- Fix 18 low-risk mago lint warnings (strict `array_search`/`in_array`, named literal arguments, numeric separators, `//` comments)
+
 # 3.5.0 (2026-09-19)
 - **Breaking**: require PHP 8.4 or newer. PHP 8.3 is no longer supported or tested
 - Add `FORK_PER_JOB` to run jobs inline in the worker instead of forking a child per job, avoiding two Redis connections (and two TLS handshakes) per job
