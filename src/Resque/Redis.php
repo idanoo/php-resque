@@ -189,7 +189,7 @@ class Redis
      */
     public static function prefix(string $namespace): void
     {
-        if (substr($namespace, -1) !== ':' && $namespace != '') {
+        if (substr($namespace, -1) !== ':' && $namespace !== '') {
             $namespace .= ':';
         }
 
@@ -209,41 +209,54 @@ class Redis
         try {
             if (is_object($client)) {
                 $this->driver = $client;
-            } else {
-                list($host, $port, $dsnDatabase, $user, $password, $options) = self::parseDsn($server);
-                $options = is_array($options) ? $options : [];
-                $timeout = isset($options['timeout']) ? intval($options['timeout']) : null;
-                $persistent = isset($options['persistent']) ? $options['persistent'] : '';
-                $maxRetries = isset($options['max_connect_retries']) ? $options['max_connect_retries'] : 0;
-                $tlsOptions = self::parseTlsOptions($options);
-                // Credentials are handed to the driver rather than AUTH'd here so that they
-                // are replayed if the connection drops and Credis reconnects. A username is
-                // only meaningful alongside a password (Redis 6+ ACL `AUTH user pass`).
-                $password = ($password === false || $password === null || $password === '') ? null : $password;
-                $user = ($password === null || $user === false || $user === null || $user === '') ? null : $user;
-                $this->driver = new \Credis_Client(
-                    $host,
-                    $port,
-                    $timeout,
-                    $persistent,
-                    0,
-                    $password,
-                    $user,
-                    $tlsOptions === [] ? null : $tlsOptions
-                );
-                $this->driver->setMaxConnectRetries($maxRetries);
-                // If we have found a database in our DSN, use it instead of the `$database`
-                // value passed into the constructor.
-                if ($dsnDatabase !== false) {
-                    $database = $dsnDatabase;
+                if ($database !== null) {
+                    $this->driver->select($database);
                 }
+
+                return;
             }
-            if ($database !== null) {
-                $this->driver->select($database);
-            }
+
+            $this->driver = self::createDriver($server, $database);
         } catch (\Exception $e) {
             throw new RedisException('Error communicating with Redis: ' . $e->getMessage(), 0, $e);
         }
+    }
+
+    private static function createDriver($server, $database): \Credis_Client
+    {
+        list($host, $port, $dsnDatabase, $user, $password, $options) = self::parseDsn($server);
+        $options = is_array($options) ? $options : [];
+        $timeout = ($options['timeout'] ?? null) !== null ? intval($options['timeout']) : null;
+        $persistent = $options['persistent'] ?? '';
+        $maxRetries = $options['max_connect_retries'] ?? 0;
+        $tlsOptions = self::parseTlsOptions($options);
+        // Credentials are handed to the driver rather than AUTH'd here so that they
+        // are replayed if the connection drops and Credis reconnects. A username is
+        // only meaningful alongside a password (Redis 6+ ACL `AUTH user pass`).
+        $password = ($password === false || $password === null || $password === '') ? null : $password;
+        $user = ($password === null || $user === false || $user === null || $user === '') ? null : $user;
+        // A database found in the DSN wins over the `$database` constructor argument.
+        // Credis only sends SELECT on connect for a non-zero db, saving a round trip
+        // per connection (one per job when forking).
+        $selectedDb = (int)($dsnDatabase !== false ? $dsnDatabase : ($database ?? 0));
+        $driver = new \Credis_Client(
+            $host,
+            $port,
+            $timeout,
+            $persistent,
+            $selectedDb,
+            $password,
+            $user,
+            $tlsOptions === [] ? null : $tlsOptions
+        );
+        $driver->setMaxConnectRetries($maxRetries);
+        // A reused persistent socket keeps whatever db its last owner selected, which
+        // Credis would not reset for db 0. This connects eagerly.
+        if ($selectedDb === 0 && $driver->getPersistence() !== '') {
+            $driver->select(0);
+        }
+
+        return $driver;
     }
 
     /**
@@ -270,7 +283,7 @@ class Redis
      */
     public static function parseDsn($dsn): array
     {
-        if ($dsn == '') {
+        if ($dsn === null || $dsn === false || $dsn === '') {
             // Use a sensible default for an empty DNS string
             $dsn = 'redis://' . self::DEFAULT_HOST;
         }
@@ -287,10 +300,11 @@ class Redis
         $parts = parse_url($dsn);
 
         // Check the URI scheme, and work out whether the connection should be encrypted
-        $scheme = isset($parts['scheme']) ? strtolower($parts['scheme']) : 'redis';
+        $scheme = strtolower($parts['scheme'] ?? 'redis');
         $hostPrefix = '';
         if (!in_array($scheme, self::PLAINTEXT_SCHEMES, strict: true)) {
-            if (!isset(self::TLS_SCHEMES[$scheme])) {
+            $hostPrefix = self::TLS_SCHEMES[$scheme] ?? null;
+            if ($hostPrefix === null) {
                 $validSchemes = array_merge(
                     self::PLAINTEXT_SCHEMES,
                     array_keys(self::TLS_SCHEMES),
@@ -300,36 +314,36 @@ class Redis
                     "Invalid DSN. Supported schemes are " . implode(', ', $validSchemes)
                 );
             }
-
-            $hostPrefix = self::TLS_SCHEMES[$scheme];
         }
 
         // Allow simple 'hostname' format, which `parse_url` treats as a path, not host.
-        if (!isset($parts['host']) && isset($parts['path'])) {
+        if (($parts['host'] ?? null) === null && ($parts['path'] ?? null) !== null) {
             $parts['host'] = $parts['path'];
             unset($parts['path']);
         }
 
         // Extract the port number as an integer
-        $port = isset($parts['port']) ? intval($parts['port']) : self::DEFAULT_PORT;
+        $port = intval($parts['port'] ?? self::DEFAULT_PORT);
 
         // Get the database from the 'path' part of the URI
         $database = false;
-        if (isset($parts['path'])) {
+        $path = $parts['path'] ?? null;
+        if ($path !== null) {
             // Strip non-digit chars from path
-            $database = intval(preg_replace('/[^0-9]/', replacement: '', subject: $parts['path']));
+            $database = intval(preg_replace('/[^0-9]/', replacement: '', subject: $path));
         }
 
         // Extract any 'user' and 'pass' values, undoing any percent-encoding needed to
         // carry reserved characters through the URI
-        $user = isset($parts['user']) ? rawurldecode($parts['user']) : false;
-        $pass = isset($parts['pass']) ? rawurldecode($parts['pass']) : false;
+        $user = ($parts['user'] ?? null) !== null ? rawurldecode($parts['user']) : false;
+        $pass = ($parts['pass'] ?? null) !== null ? rawurldecode($parts['pass']) : false;
 
         // Convert the query string into an associative array
         $options = [];
-        if (isset($parts['query'])) {
+        $query = $parts['query'] ?? null;
+        if ($query !== null) {
             // Parse the query string into an array
-            parse_str($parts['query'], $options);
+            parse_str($query, $options);
         }
 
         return [
@@ -404,21 +418,18 @@ class Redis
      */
     public function __call($name, $args)
     {
-        if (isset($this->keyCommands[$name])) {
-            if (is_array($args[0])) {
-                foreach ($args[0] as $i => $v) {
-                    $args[0][$i] = self::$defaultNamespace . $v;
-                }
-            } else {
-                $args[0] = self::$defaultNamespace . $args[0];
-            }
+        if (array_key_exists($name, $this->keyCommands)) {
+            $args[0] = is_array($args[0])
+                ? array_map(static fn($key) => self::$defaultNamespace . $key, $args[0])
+                : self::$defaultNamespace . $args[0];
         }
 
         $command = strtolower($name);
-        $retryable = !$this->inTransaction && !isset(self::NON_RETRYABLE_COMMANDS[$command]);
+        $retryable = !$this->inTransaction && !array_key_exists($command, self::NON_RETRYABLE_COMMANDS);
         if ($command === 'multi' || $command === 'pipeline') {
             $this->inTransaction = true;
-        } elseif ($command === 'exec' || $command === 'discard') {
+        }
+        if ($command === 'exec' || $command === 'discard') {
             $this->inTransaction = false;
         }
 
@@ -441,6 +452,92 @@ class Redis
                     $retryError
                 );
             }
+        }
+    }
+
+    /**
+     * Send the commands queued by $queue in one pipelined round trip.
+     *
+     * Queued commands are only written at EXEC, so the per-command retry in __call()
+     * never sees a dropped connection. A plain pipeline is instead replayed once on a
+     * fresh connection (same at-least-once trade-off) by calling $queue again, so $queue
+     * must only queue commands. A $transaction is wrapped in MULTI/EXEC and never
+     * replayed, as the lost reply may belong to an EXEC the server already applied.
+     *
+     * @param callable(self): void $queue
+     *
+     * @return mixed The EXEC reply
+     *
+     * @throws \Resque\RedisException
+     */
+    public function pipelined(callable $queue, bool $transaction = false): mixed
+    {
+        try {
+            return $this->runPipeline($queue, $transaction);
+        } catch (RedisException $e) {
+            $cause = $e->getPrevious();
+            $this->inTransaction = false;
+            if ($transaction || !$cause instanceof \Exception || !$this->isDisconnect($cause)) {
+                throw $e;
+            }
+
+            try {
+                $this->reconnect();
+            } catch (\Exception $reconnectError) {
+                throw new RedisException(
+                    'Error communicating with Redis: ' . $reconnectError->getMessage(),
+                    0,
+                    $reconnectError
+                );
+            }
+
+            try {
+                return $this->runPipeline($queue, $transaction);
+            } finally {
+                $this->inTransaction = false;
+            }
+        }
+    }
+
+    private function runPipeline(callable $queue, bool $transaction): mixed
+    {
+        // Under phpredis Credis drops a multi() queued after pipeline(), so a transaction
+        // opens the MULTI on its own. Still atomic, just slower, if Credis was forced standalone.
+        if (!$transaction || !($this->driver instanceof \Credis_Client && extension_loaded('redis'))) {
+            $this->__call('pipeline', []);
+        }
+        if ($transaction) {
+            $this->__call('multi', []);
+        }
+
+        try {
+            $queue($this);
+        } catch (\Throwable $e) {
+            $this->abortPipeline();
+            throw $e;
+        }
+
+        return $this->__call('exec', []);
+    }
+
+    /**
+     * Reset a pipeline whose callback threw; left open it would swallow every later command.
+     */
+    private function abortPipeline(): void
+    {
+        // Closing resets it portably; standalone Credis sends a DISCARD the server rejects
+        // outside MULTI.
+        if (method_exists($this->driver, 'close')) {
+            $this->close();
+
+            return;
+        }
+
+        $this->inTransaction = false;
+        // @mago-expect lint:no-empty-catch-clause A plain pipeline has no MULTI to discard; the driver has still reset itself.
+        try {
+            $this->driver->__call('discard', []);
+        } catch (\Throwable) {
         }
     }
 

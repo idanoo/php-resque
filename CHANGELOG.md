@@ -1,3 +1,11 @@
+# 3.6.0 (2026-10-24)
+- Cut Redis round trips per job from 7 to 3 (9 to 4 when forking per job) and per enqueue from 4 to 1
+- `Worker::doneWorking()` sends its stats and worker-key cleanup as one pipeline, via the new `Stat::incrPipelined()`
+- `Resque::push()` pipelines `MULTI`/`SADD`/`RPUSH`/`EXEC` in one write (a real `MULTI` under phpredis), and is never replayed after a lost reply, so a job cannot be enqueued twice
+- Stop sending `SELECT 0` on every connect; the database is handed to Credis, which only selects a non-zero db. Persistent connections still `SELECT 0`, as a reused socket may be on another db
+- Add `Redis::pipelined()`, which replays a whole batch once on a fresh connection when it dropped, keeping the 3.5.0 reconnect handling for pipelined writes. `transaction: true` wraps it in `MULTI`/`EXEC` and disables the replay
+- `new Redis(...)` no longer connects eagerly, so an unreachable host now fails on the first command instead of in the constructor
+
 # 3.5.1 (2026-10-24)
 - Update `carthage-software/mago` to 1.58 and lint against PHP 8.5
 - Update the dev toolchain to PHPUnit 13.4

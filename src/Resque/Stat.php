@@ -32,6 +32,32 @@ class Stat
     }
 
     /**
+     * Increment several stats and delete keys in one pipelined round trip.
+     *
+     * Same semantics as {@see self::incr()} per stat: SET NX seeds the counter with its
+     * TTL, INCRBY counts.
+     *
+     * @param string[] $stats Stat names to increment by 1
+     * @param string[] $deleteKeys Keys (un-prefixed) to delete in the same round trip
+     */
+    public static function incrPipelined(array $stats, array $deleteKeys = []): void
+    {
+        if (self::$disableStats) {
+            $stats = [];
+        }
+
+        Resque::redis()->pipelined(static function (Redis $redis) use ($stats, $deleteKeys): void {
+            foreach ($stats as $stat) {
+                $redis->set('stat:' . $stat, 0, ['ex' => Redis::DEFAULT_REDIS_TTL, 'nx']);
+                $redis->incrby('stat:' . $stat, 1);
+            }
+            foreach ($deleteKeys as $key) {
+                $redis->del($key);
+            }
+        });
+    }
+
+    /**
      * Get the value of the supplied statistic counter for the specified statistic.
      *
      * @param string $stat The name of the statistic to get the stats for.
