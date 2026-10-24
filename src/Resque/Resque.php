@@ -64,11 +64,9 @@ class Resque
             return self::$redis;
         }
 
-        if (is_callable(self::$redisServer)) {
-            self::$redis = call_user_func(self::$redisServer, self::$redisDatabase);
-        } else {
-            self::$redis = new \Resque\Redis(self::$redisServer, self::$redisDatabase);
-        }
+        self::$redis = is_callable(self::$redisServer)
+            ? call_user_func(self::$redisServer, self::$redisDatabase)
+            : new \Resque\Redis(self::$redisServer, self::$redisDatabase);
 
         return self::$redis;
     }
@@ -160,9 +158,9 @@ class Resque
     {
         if (count($items) > 0) {
             return self::removeItems($queue, $items);
-        } else {
-            return self::removeList($queue);
         }
+
+        return self::removeList($queue);
     }
 
     /**
@@ -301,20 +299,19 @@ class Resque
         $requeueQueue = $tempQueue . ':requeue';
 
         // move each item from original queue to temp queue and process it
-        $finished = false;
-        while (!$finished) {
+        while (true) {
             $string = self::redis()->rpoplpush($originalQueue, self::redis()->getPrefix() . $tempQueue);
-
-            if ($string) {
-                if (self::matchItem($string, $items)) {
-                    self::redis()->rpop($tempQueue);
-                    $counter++;
-                } else {
-                    self::redis()->rpoplpush($tempQueue, self::redis()->getPrefix() . $requeueQueue);
-                }
-            } else {
-                $finished = true;
+            if (!$string) {
+                break;
             }
+
+            if (self::matchItem($string, $items)) {
+                self::redis()->rpop($tempQueue);
+                $counter++;
+                continue;
+            }
+
+            self::redis()->rpoplpush($tempQueue, self::redis()->getPrefix() . $requeueQueue);
         }
 
         // move back from temp queue to original queue
@@ -352,24 +349,30 @@ class Resque
         foreach ($items as $key => $val) {
             // class name only  ex: item[0] = ['class']
             if (is_numeric($key)) {
-                if ($decoded['class'] == $val) {
+                if ($decoded['class'] === $val) {
                     return true;
                 }
-                // class name with args , example: item[0] = ['class' => {'foo' => 1, 'bar' => 2}]
-            } elseif (is_array($val)) {
+
+                continue;
+            }
+
+            // class name with args , example: item[0] = ['class' => {'foo' => 1, 'bar' => 2}]
+            if (is_array($val)) {
                 $decodedArgs = (array)$decoded['args'][0];
                 if (
-                    $decoded['class'] == $key
+                    $decoded['class'] === $key
                     && count($decodedArgs) > 0
-                    && count(array_diff($decodedArgs, $val)) == 0
+                    && count(array_diff($decodedArgs, $val)) === 0
                 ) {
                     return true;
                 }
-                // class name with ID, example: item[0] = ['class' => 'id']
-            } else {
-                if ($decoded['class'] == $key && $decoded['id'] == $val) {
-                    return true;
-                }
+
+                continue;
+            }
+
+            // class name with ID, example: item[0] = ['class' => 'id']
+            if ($decoded['class'] === $key && $decoded['id'] === (string)$val) {
+                return true;
             }
         }
         return false;
@@ -389,7 +392,7 @@ class Resque
     {
         $counter = self::size($queue);
         $result = self::redis()->del('queue:' . $queue);
-        return ($result == 1) ? $counter : 0;
+        return ($result === 1) ? $counter : 0;
     }
 
     /*

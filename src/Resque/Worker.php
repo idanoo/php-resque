@@ -159,18 +159,18 @@ class Worker
                         'Starting blocking with timeout of {interval}',
                         ['interval' => $interval],
                     );
-                    $this->updateProcLine(
-                        'Waiting for ' . implode(',', $this->queues) . ' with blocking timeout ' . $interval
-                    );
-                } else {
-                    $this->updateProcLine('Waiting for ' . implode(',', $this->queues) . ' with interval ' . $interval);
                 }
+                $this->updateProcLine(
+                    'Waiting for ' . implode(',', $this->queues)
+                    . ($blocking === true ? ' with blocking timeout ' : ' with interval ') . $interval
+                );
 
                 try {
                     $job = $this->reserve($blocking, $interval);
                 } catch (RedisException $e) {
                     // An interval of 0 means "make one pass and stop", so let it surface.
-                    if ($interval == 0) {
+                    // Cast as `INTERVAL` arrives from the environment as a string.
+                    if ((float)$interval === 0.0) {
                         throw $e;
                     }
 
@@ -192,7 +192,7 @@ class Worker
 
             if (!$job) {
                 // For an interval of 0, break now - helps with unit testing etc
-                if ($interval == 0) {
+                if ((float)$interval === 0.0) {
                     break;
                 }
 
@@ -204,11 +204,7 @@ class Worker
                         ['interval' => $interval],
                     );
 
-                    if ($this->paused) {
-                        $this->updateProcLine('Paused');
-                    } else {
-                        $this->updateProcLine('Waiting for ' . implode(',', $this->queues));
-                    }
+                    $this->updateProcLine($this->paused ? 'Paused' : 'Waiting for ' . implode(',', $this->queues));
 
                     usleep($interval * 1_000_000);
                 }
@@ -299,14 +295,16 @@ class Worker
                 $this->logger->log(\Psr\Log\LogLevel::INFO, 'Found job on {queue}', ['queue' => $job->queue]);
                 return $job;
             }
-        } else {
-            foreach ($queues as $queue) {
-                $this->logger->log(\Psr\Log\LogLevel::INFO, 'Checking {queue} for jobs', ['queue' => $queue]);
-                $job = \Resque\Job\Job::reserve($queue);
-                if (!is_null($job)) {
-                    $this->logger->log(\Psr\Log\LogLevel::INFO, 'Found job on {queue}', ['queue' => $job->queue]);
-                    return $job;
-                }
+
+            return false;
+        }
+
+        foreach ($queues as $queue) {
+            $this->logger->log(\Psr\Log\LogLevel::INFO, 'Checking {queue} for jobs', ['queue' => $queue]);
+            $job = \Resque\Job\Job::reserve($queue);
+            if (!is_null($job)) {
+                $this->logger->log(\Psr\Log\LogLevel::INFO, 'Found job on {queue}', ['queue' => $job->queue]);
+                return $job;
             }
         }
 
@@ -327,7 +325,7 @@ class Worker
      */
     public function queues(bool $fetch = true): array
     {
-        if (!in_array('*', $this->queues, strict: true) || $fetch == false) {
+        if (!in_array('*', $this->queues, strict: true) || $fetch === false) {
             return $this->queues;
         }
 
@@ -463,18 +461,20 @@ class Worker
         }
 
         $this->logger->log(\Psr\Log\LogLevel::INFO, 'Killing child at {child}', ['child' => $this->child]);
-        if (exec('ps -o pid,state -p ' . $this->child, $output, $returnCode) && $returnCode != 1) {
-            $this->logger->log(\Psr\Log\LogLevel::DEBUG, 'Child {child} found, killing.', ['child' => $this->child]);
-            posix_kill($this->child, SIGKILL);
-            $this->child = null;
-        } else {
+        if (!exec('ps -o pid,state -p ' . $this->child, $output, $returnCode) || $returnCode === 1) {
             $this->logger->log(
                 \Psr\Log\LogLevel::INFO,
                 'Child {child} not found, restarting.',
                 ['child' => $this->child],
             );
             $this->shutdown();
+
+            return;
         }
+
+        $this->logger->log(\Psr\Log\LogLevel::DEBUG, 'Child {child} found, killing.', ['child' => $this->child]);
+        posix_kill($this->child, SIGKILL);
+        $this->child = null;
     }
 
     /**

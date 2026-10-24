@@ -189,7 +189,7 @@ class Redis
      */
     public static function prefix(string $namespace): void
     {
-        if (substr($namespace, -1) !== ':' && $namespace != '') {
+        if (substr($namespace, -1) !== ':' && $namespace !== '') {
             $namespace .= ':';
         }
 
@@ -212,42 +212,51 @@ class Redis
                 if ($database !== null) {
                     $this->driver->select($database);
                 }
-            } else {
-                list($host, $port, $dsnDatabase, $user, $password, $options) = self::parseDsn($server);
-                $options = is_array($options) ? $options : [];
-                $timeout = ($options['timeout'] ?? null) !== null ? intval($options['timeout']) : null;
-                $persistent = $options['persistent'] ?? '';
-                $maxRetries = $options['max_connect_retries'] ?? 0;
-                $tlsOptions = self::parseTlsOptions($options);
-                // Credentials are handed to the driver rather than AUTH'd here so that they
-                // are replayed if the connection drops and Credis reconnects. A username is
-                // only meaningful alongside a password (Redis 6+ ACL `AUTH user pass`).
-                $password = ($password === false || $password === null || $password === '') ? null : $password;
-                $user = ($password === null || $user === false || $user === null || $user === '') ? null : $user;
-                // A database found in the DSN wins over the `$database` constructor argument.
-                // Credis only sends SELECT on connect for a non-zero db, saving a round trip
-                // per connection (one per job when forking).
-                $selectedDb = (int)($dsnDatabase !== false ? $dsnDatabase : ($database ?? 0));
-                $this->driver = new \Credis_Client(
-                    $host,
-                    $port,
-                    $timeout,
-                    $persistent,
-                    $selectedDb,
-                    $password,
-                    $user,
-                    $tlsOptions === [] ? null : $tlsOptions
-                );
-                $this->driver->setMaxConnectRetries($maxRetries);
-                // A reused persistent socket keeps whatever db its last owner selected, which
-                // Credis would not reset for db 0. This connects eagerly.
-                if ($selectedDb === 0 && $this->driver->getPersistence() !== '') {
-                    $this->driver->select(0);
-                }
+
+                return;
             }
+
+            $this->driver = self::createDriver($server, $database);
         } catch (\Exception $e) {
             throw new RedisException('Error communicating with Redis: ' . $e->getMessage(), 0, $e);
         }
+    }
+
+    private static function createDriver($server, $database): \Credis_Client
+    {
+        list($host, $port, $dsnDatabase, $user, $password, $options) = self::parseDsn($server);
+        $options = is_array($options) ? $options : [];
+        $timeout = ($options['timeout'] ?? null) !== null ? intval($options['timeout']) : null;
+        $persistent = $options['persistent'] ?? '';
+        $maxRetries = $options['max_connect_retries'] ?? 0;
+        $tlsOptions = self::parseTlsOptions($options);
+        // Credentials are handed to the driver rather than AUTH'd here so that they
+        // are replayed if the connection drops and Credis reconnects. A username is
+        // only meaningful alongside a password (Redis 6+ ACL `AUTH user pass`).
+        $password = ($password === false || $password === null || $password === '') ? null : $password;
+        $user = ($password === null || $user === false || $user === null || $user === '') ? null : $user;
+        // A database found in the DSN wins over the `$database` constructor argument.
+        // Credis only sends SELECT on connect for a non-zero db, saving a round trip
+        // per connection (one per job when forking).
+        $selectedDb = (int)($dsnDatabase !== false ? $dsnDatabase : ($database ?? 0));
+        $driver = new \Credis_Client(
+            $host,
+            $port,
+            $timeout,
+            $persistent,
+            $selectedDb,
+            $password,
+            $user,
+            $tlsOptions === [] ? null : $tlsOptions
+        );
+        $driver->setMaxConnectRetries($maxRetries);
+        // A reused persistent socket keeps whatever db its last owner selected, which
+        // Credis would not reset for db 0. This connects eagerly.
+        if ($selectedDb === 0 && $driver->getPersistence() !== '') {
+            $driver->select(0);
+        }
+
+        return $driver;
     }
 
     /**
@@ -274,7 +283,7 @@ class Redis
      */
     public static function parseDsn($dsn): array
     {
-        if ($dsn == '') {
+        if ($dsn === null || $dsn === false || $dsn === '') {
             // Use a sensible default for an empty DNS string
             $dsn = 'redis://' . self::DEFAULT_HOST;
         }
@@ -410,20 +419,17 @@ class Redis
     public function __call($name, $args)
     {
         if (array_key_exists($name, $this->keyCommands)) {
-            if (is_array($args[0])) {
-                foreach ($args[0] as $i => $v) {
-                    $args[0][$i] = self::$defaultNamespace . $v;
-                }
-            } else {
-                $args[0] = self::$defaultNamespace . $args[0];
-            }
+            $args[0] = is_array($args[0])
+                ? array_map(static fn($key) => self::$defaultNamespace . $key, $args[0])
+                : self::$defaultNamespace . $args[0];
         }
 
         $command = strtolower($name);
         $retryable = !$this->inTransaction && !array_key_exists($command, self::NON_RETRYABLE_COMMANDS);
         if ($command === 'multi' || $command === 'pipeline') {
             $this->inTransaction = true;
-        } elseif ($command === 'exec' || $command === 'discard') {
+        }
+        if ($command === 'exec' || $command === 'discard') {
             $this->inTransaction = false;
         }
 
@@ -495,15 +501,13 @@ class Redis
 
     private function runPipeline(callable $queue, bool $transaction): mixed
     {
-        if ($transaction && $this->driver instanceof \Credis_Client && extension_loaded('redis')) {
-            // Under phpredis Credis drops a multi() queued after pipeline(), so open the
-            // MULTI on its own. Still atomic, just slower, if Credis was forced standalone.
-            $this->__call('multi', []);
-        } else {
+        // Under phpredis Credis drops a multi() queued after pipeline(), so a transaction
+        // opens the MULTI on its own. Still atomic, just slower, if Credis was forced standalone.
+        if (!$transaction || !($this->driver instanceof \Credis_Client && extension_loaded('redis'))) {
             $this->__call('pipeline', []);
-            if ($transaction) {
-                $this->__call('multi', []);
-            }
+        }
+        if ($transaction) {
+            $this->__call('multi', []);
         }
 
         try {
